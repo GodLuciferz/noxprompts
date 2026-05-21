@@ -32,17 +32,24 @@ export default function AdminPage() {
   const login = () => {
     if (pw === '@noxstudio123') {
       setAuthed(true);
-      fetchTrends();
     } else {
       toast.error('Wrong password!');
     }
   };
 
   const fetchTrends = async () => {
-    const res = await fetch('/api/trends');
-    const data = await res.json();
-    setTrends(data);
+    try {
+      const res = await fetch('/api/trends', { cache: 'no-store' });
+      const data = await res.json();
+      setTrends(Array.isArray(data) ? data : []);
+    } catch {
+      setTrends([]);
+    }
   };
+
+  useEffect(() => {
+    if (authed) fetchTrends();
+  }, [authed]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
