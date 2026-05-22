@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getAllTrends } from '@/lib/db';
+import { headers } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
 
 export async function GET() {
+  headers();
   try {
     const trends = await getAllTrends();
     return NextResponse.json(trends, {
