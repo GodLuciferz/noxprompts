@@ -18,6 +18,8 @@ function getStoreInstance() {
   return getStore({
     name: 'trends',
     consistency: 'strong',
+    siteID: process.env.NETLIFY_SITE_ID!,
+    token: process.env.NETLIFY_TOKEN!,
   });
 }
 
