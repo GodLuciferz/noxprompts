@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #F2F0FF;
+    --bg-card: #FFFFFF;
+    --text: #0A0A1A;
+    --text-muted: #6655AA;
+    --border: rgba(139,47,201,0.15);
+    --pink: #FF2D78;
+    --purple: #8B2FC9;
+    --cyan: #00C8FF;
+    --orange: #FF6B00;
+    --yellow: #FFD000;
+  }
+  .dark {
+    --bg: #0A0A0F;
+    --bg-card: #12121A;
+    --text: #F0F0FF;
+    --text-muted: #8877BB;
+    --border: rgba(139,47,201,0.25);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    transition: background 0.3s, color 0.3s;
+  }
+}
+
+@layer components {
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  .card:hover {
+    transform: translateY(-5px);
+    border-color: var(--pink);
+    box-shadow: 0 24px 60px rgba(255,45,120,0.15);
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, var(--pink), var(--purple), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 28px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+  }
+  .btn-primary:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 30px rgba(255,45,120,0.4);
+  }
+  .tag {
+    background: rgba(139,47,201,0.12);
+    border: 1px solid rgba(139,47,201,0.25);
+    color: var(--purple);
+    padding: 5px 14px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    border: none;
+  }
+  .tag:hover, .tag.active {
+    background: var(--purple);
+    color: #fff;
+  }
+  .dark .tag { color: #CC88FF; background: rgba(139,47,201,0.15); }
+  .dark .tag:hover, .dark .tag.active { background: var(--purple); color: #fff; }
+  .hot-badge {
+    background: linear-gradient(135deg, #FF6B00, #FFD000);
+    color: #0A0A0F;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 50px;
+    letter-spacing: 0.03em;
+  }
+  .mesh {
+    background-image:
+      radial-gradient(at 20% 10%, rgba(255,45,120,0.12) 0, transparent 50%),
+      radial-gradient(at 80% 0%, rgba(139,47,201,0.1) 0, transparent 50%),
+      radial-gradient(at 0% 60%, rgba(0,200,255,0.08) 0, transparent 50%),
+      radial-gradient(at 90% 90%, rgba(255,107,0,0.08) 0, transparent 50%);
+  }
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 3px; }
