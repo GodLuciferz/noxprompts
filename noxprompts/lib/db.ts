@@ -1,4 +1,9 @@
-import { kv } from '@vercel/kv';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! as string
+);
 
 export interface Trend {
   id: string;
@@ -14,14 +19,30 @@ export interface Trend {
   createdAt: string;
 }
 
+function toTrend(row: any): Trend {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    category: row.category,
+    tags: row.tags || [],
+    imageUrl: row.image_url,
+    prompt: row.prompt,
+    description: row.description,
+    isTrending: row.is_trending,
+    copyCount: row.copy_count,
+    createdAt: row.created_at,
+  };
+}
+
 export async function getAllTrends(): Promise<Trend[]> {
   try {
-    const keys = await kv.smembers('trend:keys');
-    if (!keys || keys.length === 0) return [];
-    const trends = await Promise.all(keys.map((k) => kv.get<Trend>(`trend:${k}`)));
-    return (trends.filter(Boolean) as Trend[]).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const { data, error } = await supabase
+      .from('trends')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return (data || []).map(toTrend);
   } catch {
     return [];
   }
@@ -29,28 +50,50 @@ export async function getAllTrends(): Promise<Trend[]> {
 
 export async function getTrendBySlug(slug: string): Promise<Trend | null> {
   try {
-    return await kv.get<Trend>(`trend:${slug}`);
+    const { data, error } = await supabase
+      .from('trends')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+    if (error || !data) return null;
+    return toTrend(data);
   } catch {
     return null;
   }
 }
 
 export async function saveTrend(trend: Trend): Promise<void> {
-  await kv.set(`trend:${trend.slug}`, trend);
-  await kv.sadd('trend:keys', trend.slug);
+  await supabase.from('trends').upsert({
+    id: trend.id,
+    slug: trend.slug,
+    title: trend.title,
+    category: trend.category,
+    tags: trend.tags,
+    image_url: trend.imageUrl,
+    prompt: trend.prompt,
+    description: trend.description,
+    is_trending: trend.isTrending,
+    copy_count: trend.copyCount,
+    created_at: trend.createdAt,
+  });
 }
 
 export async function deleteTrend(slug: string): Promise<void> {
-  await kv.del(`trend:${slug}`);
-  await kv.srem('trend:keys', slug);
+  await supabase.from('trends').delete().eq('slug', slug);
 }
 
 export async function incrementCopyCount(slug: string): Promise<void> {
   try {
-    const trend = await kv.get<Trend>(`trend:${slug}`);
-    if (trend) {
-      trend.copyCount = (trend.copyCount || 0) + 1;
-      await kv.set(`trend:${slug}`, trend);
+    const { data } = await supabase
+      .from('trends')
+      .select('copy_count')
+      .eq('slug', slug)
+      .single();
+    if (data) {
+      await supabase
+        .from('trends')
+        .update({ copy_count: (data.copy_count || 0) + 1 })
+        .eq('slug', slug);
     }
   } catch {}
 }
