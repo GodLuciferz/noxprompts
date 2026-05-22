@@ -18,8 +18,6 @@ function getStoreInstance() {
   return getStore({
     name: 'trends',
     consistency: 'strong',
-    siteID: process.env.NETLIFY_SITE_ID,
-    token: process.env.NETLIFY_TOKEN,
   });
 }
 
@@ -28,14 +26,12 @@ export async function getAllTrends(): Promise<Trend[]> {
     const store = getStoreInstance();
     const { blobs } = await store.list();
     const trends: Trend[] = [];
-
     for (const blob of blobs) {
       try {
         const data = await store.get(blob.key, { type: 'json' });
         if (data) trends.push(data as Trend);
       } catch {}
     }
-
     return trends.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
