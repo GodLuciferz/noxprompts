@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveTrend, deleteTrend, getTrendBySlug } from '@/lib/db';
 import { generateSlug } from '@/lib/utils';
-import { v4 as uuid } from 'crypto';
 
 function auth(req: NextRequest) {
   return req.headers.get('x-admin-password') === process.env.ADMIN_PASSWORD;
