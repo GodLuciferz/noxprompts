@@ -5,15 +5,37 @@ import ThemeProvider from '@/components/ThemeProvider';
 import Navbar from '@/components/Navbar';
 
 export const metadata: Metadata = {
-  title: 'NoxPrompts — Trending AI Art Prompts',
-  description: 'Discover the latest trending AI art styles with ready-to-use prompts. Ghibli, Anime, Realistic, Dark & more.',
-  keywords: 'AI prompts, trending AI art, Ghibli prompts, anime AI art, Midjourney prompts',
+  title: {
+    default: 'NoxPrompts — Trending AI Art Prompts 2025',
+    template: '%s | NoxPrompts',
+  },
+  description: 'Discover the latest trending AI art styles with ready-to-use prompts. Ghibli, Anime, Realistic, Dark, Neon & more. Copy & create instantly on ChatGPT, Midjourney, DALL-E.',
+  keywords: [
+    'AI art prompts', 'trending AI art', 'Ghibli AI prompt', 'anime AI art prompt',
+    'Midjourney prompts 2025', 'ChatGPT image prompts', 'DALL-E prompts',
+    'AI image generator prompts', 'viral AI art style', 'neon AI art',
+    'dark AI art prompt', 'realistic AI portrait prompt', 'free AI prompts',
+    'best AI art prompts', 'NoxPrompts',
+  ],
+  metadataBase: new URL('https://noxzone111.online'),
+  alternates: { canonical: 'https://noxzone111.online' },
   openGraph: {
-    title: 'NoxPrompts — Trending AI Art Prompts',
-    description: 'Discover trending AI art styles with ready-to-use prompts',
+    title: 'NoxPrompts — Trending AI Art Prompts 2025',
+    description: 'Every viral AI art style — one prompt away. Copy & create instantly.',
     url: 'https://noxzone111.online',
     siteName: 'NoxPrompts',
     type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NoxPrompts — Trending AI Art Prompts',
+    description: 'Every viral AI art style — one prompt away.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
   },
 };
 
