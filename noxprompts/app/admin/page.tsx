@@ -169,7 +169,7 @@ export default function AdminPage() {
           {(['add', 'manage'] as const).map((tab) => (
             <button
               key={tab}
-              onClick={() => { setActiveTab(tab); if (tab === 'manage') fetchTrends(); }}
+              onClick={() => { if (tab === 'manage') { router.push('/admin/manage'); } else { setActiveTab(tab); } }}
               className={`tag-pill ${activeTab === tab ? 'active' : ''}`}
               style={{ fontSize: '14px', padding: '8px 20px' }}
             >
