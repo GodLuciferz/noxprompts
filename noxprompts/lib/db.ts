@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Use service role key for server-side operations (bypasses RLS)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! as string
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 export interface Trend {
@@ -41,9 +42,13 @@ export async function getAllTrends(): Promise<Trend[]> {
       .from('trends')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) return [];
+    if (error) {
+      console.error('getAllTrends error:', error);
+      return [];
+    }
     return (data || []).map(toTrend);
-  } catch {
+  } catch (e) {
+    console.error('getAllTrends exception:', e);
     return [];
   }
 }
@@ -63,7 +68,7 @@ export async function getTrendBySlug(slug: string): Promise<Trend | null> {
 }
 
 export async function saveTrend(trend: Trend): Promise<void> {
-  await supabase.from('trends').upsert({
+  const { error } = await supabase.from('trends').upsert({
     id: trend.id,
     slug: trend.slug,
     title: trend.title,
@@ -76,6 +81,7 @@ export async function saveTrend(trend: Trend): Promise<void> {
     copy_count: trend.copyCount,
     created_at: trend.createdAt,
   });
+  if (error) console.error('saveTrend error:', error);
 }
 
 export async function deleteTrend(slug: string): Promise<void> {
