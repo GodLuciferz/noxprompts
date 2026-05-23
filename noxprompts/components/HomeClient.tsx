@@ -87,7 +87,7 @@ export default function HomeClient({ allTrends, initSearch, initCategory, catego
               fontFamily: 'Unbounded,sans-serif', fontSize: 19, fontWeight: 700,
               marginBottom: 20, color: 'var(--text)',
             }}>✨ New This Week</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(270px,1fr))', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(270px,1fr))', gap: 20, alignItems: 'stretch' }}>
               {newThisWeek.slice(0, 4).map(t => <TrendCard key={t.id} trend={t} />)}
             </div>
           </section>
@@ -109,7 +109,7 @@ export default function HomeClient({ allTrends, initSearch, initCategory, catego
               <p style={{ fontSize: 18 }}>No trends found. Try something else!</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(270px,1fr))', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(270px,1fr))', gap: 20, alignItems: 'stretch' }}>
               {filtered.map(t => <TrendCard key={t.id} trend={t} />)}
             </div>
           )}
