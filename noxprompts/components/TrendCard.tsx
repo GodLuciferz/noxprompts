@@ -18,8 +18,14 @@ export default function TrendCard({ trend }: { trend: Trend }) {
 
   return (
     <Link href={`/trends/${trend.slug}`} style={{ textDecoration: 'none' }}>
-      <div className="card" style={{ cursor: 'pointer' }}>
-        <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden' }}>
+      <div className="card" style={{
+        cursor: 'pointer',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
+        {/* Image - fixed height */}
+        <div style={{ position: 'relative', height: 200, flexShrink: 0, overflow: 'hidden' }}>
           <Image src={trend.imageUrl} alt={trend.title} fill style={{ objectFit: 'cover', transition: 'transform 0.4s' }}
             onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.07)')}
             onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')} />
@@ -34,23 +40,38 @@ export default function TrendCard({ trend }: { trend: Trend }) {
           }}>{trend.category}</span>
         </div>
 
-        <div style={{ padding: '14px 16px' }}>
+        {/* Content - flex grow to fill height */}
+        <div style={{
+          padding: '14px 16px',
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+        }}>
           <h3 style={{
             fontFamily: 'Unbounded,sans-serif', fontSize: 14, fontWeight: 700,
             color: 'var(--text)', marginBottom: 8, lineHeight: 1.4,
           }}>{trend.title}</h3>
 
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+          {/* Tags - fixed height, overflow hidden */}
+          <div style={{
+            display: 'flex', gap: 6, flexWrap: 'wrap',
+            marginBottom: 12, height: 28, overflow: 'hidden',
+          }}>
             {trend.tags.slice(0, 3).map(t => (
               <span key={t} style={{
                 background: 'rgba(139,47,201,0.1)', color: 'var(--purple)',
                 border: '1px solid rgba(139,47,201,0.2)',
                 fontSize: 11, padding: '2px 9px', borderRadius: 50, fontWeight: 600,
+                whiteSpace: 'nowrap',
               }}>#{t}</span>
             ))}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* Footer - always at bottom */}
+          <div style={{
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', marginTop: 'auto',
+          }}>
             <span style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <FiCopy size={11} /> {trend.copyCount || 0} copies
             </span>
