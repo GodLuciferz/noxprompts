@@ -17,7 +17,7 @@ export default function HomeClient({ allTrends, initSearch, initCategory, catego
   const [q, setQ] = useState(initSearch || '');
 
   const allTitles = useMemo(() => allTrends.map(t => t.title), [allTrends]);
-  const allTags = useMemo(() => [...new Set(allTrends.flatMap(t => t.tags))], [allTrends]);
+  const allTags = useMemo(() => Array.from(new Set(allTrends.flatMap(t => t.tags))), [allTrends]);
 
   const filtered = useMemo(() => allTrends.filter(t => {
     const mCat = cat === 'All' || t.category === cat;
