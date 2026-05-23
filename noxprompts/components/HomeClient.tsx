@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import { Trend } from '@/lib/db';
 import TrendCard from './TrendCard';
+import SearchBar from './SearchBar';
 import { FiZap } from 'react-icons/fi';
 
 interface Props {
@@ -14,6 +15,9 @@ interface Props {
 export default function HomeClient({ allTrends, initSearch, initCategory, categories }: Props) {
   const [cat, setCat] = useState(initCategory || 'All');
   const [q, setQ] = useState(initSearch || '');
+
+  const allTitles = useMemo(() => allTrends.map(t => t.title), [allTrends]);
+  const allTags = useMemo(() => [...new Set(allTrends.flatMap(t => t.tags))], [allTrends]);
 
   const filtered = useMemo(() => allTrends.filter(t => {
     const mCat = cat === 'All' || t.category === cat;
@@ -60,19 +64,7 @@ export default function HomeClient({ allTrends, initSearch, initCategory, catego
           Every viral AI art style — one prompt away. Copy & create instantly.
         </p>
 
-        <input
-          value={q}
-          onChange={e => setQ(e.target.value)}
-          placeholder="🔍  Search Ghibli, Neon, Anime, Dark..."
-          style={{
-            width: '100%', maxWidth: 460, padding: '12px 20px', borderRadius: 50,
-            border: '2px solid var(--border)', background: 'var(--bg-card)',
-            color: 'var(--text)', fontSize: 14, outline: 'none', fontFamily: 'inherit',
-            transition: 'border-color 0.3s',
-          }}
-          onFocus={e => (e.target.style.borderColor = '#FF2D78')}
-          onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-        />
+        <SearchBar allTitles={allTitles} allTags={allTags} initValue={q} onChange={setQ} />
       </div>
 
       {/* Category filters */}
@@ -80,7 +72,7 @@ export default function HomeClient({ allTrends, initSearch, initCategory, catego
         display: 'flex', gap: 8, overflowX: 'auto', padding: '0 16px 16px',
         maxWidth: 1280, margin: '0 auto', scrollbarWidth: 'none',
         WebkitOverflowScrolling: 'touch',
-      }}>
+      } as React.CSSProperties}>
         {categories.map(c => (
           <button key={c} onClick={() => setCat(c)}
             className={`tag${cat === c ? ' active' : ''}`}
