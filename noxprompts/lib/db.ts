@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Use service role key for server-side operations (bypasses RLS)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -18,6 +17,18 @@ export interface Trend {
   isTrending: boolean;
   copyCount: number;
   createdAt: string;
+}
+
+export interface SiteLink {
+  label: string;
+  url: string;
+  icon?: string;
+}
+
+export interface SiteInfo {
+  title: string;
+  description: string;
+  links: SiteLink[];
 }
 
 function toTrend(row: any): Trend {
@@ -42,10 +53,7 @@ export async function getAllTrends(): Promise<Trend[]> {
       .from('trends')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) {
-      console.error('getAllTrends error:', error);
-      return [];
-    }
+    if (error) { console.error('getAllTrends error:', error); return []; }
     return (data || []).map(toTrend);
   } catch (e) {
     console.error('getAllTrends exception:', e);
@@ -62,9 +70,19 @@ export async function getTrendBySlug(slug: string): Promise<Trend | null> {
       .single();
     if (error || !data) return null;
     return toTrend(data);
-  } catch {
-    return null;
-  }
+  } catch { return null; }
+}
+
+export async function getRelatedTrends(slug: string, category: string): Promise<Trend[]> {
+  try {
+    const { data } = await supabase
+      .from('trends')
+      .select('*')
+      .eq('category', category)
+      .neq('slug', slug)
+      .limit(3);
+    return (data || []).map(toTrend);
+  } catch { return []; }
 }
 
 export async function saveTrend(trend: Trend): Promise<void> {
