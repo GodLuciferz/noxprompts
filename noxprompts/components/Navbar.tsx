@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTheme } from './ThemeProvider';
-import { FiSun, FiMoon, FiZap } from 'react-icons/fi';
+import { FiSun, FiMoon } from 'react-icons/fi';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -20,14 +21,15 @@ export default function Navbar() {
         maxWidth: 1280, margin: '0 auto', padding: '0 20px',
         height: 64, display: 'flex', alignItems: 'center', gap: 16,
       }}>
-        <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            width: 34, height: 34,
-            background: 'linear-gradient(135deg,#FF2D78,#8B2FC9)',
-            borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <FiZap color="#fff" size={17} />
-          </div>
+        {/* Logo */}
+        <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Image
+            src="https://res.cloudinary.com/dirmb9e0e/image/upload/v1779549564/noxpromptlogo_kx2ykr.webp"
+            alt="NoxPrompts Logo"
+            width={42}
+            height={42}
+            style={{ borderRadius: 10, objectFit: 'contain' }}
+          />
           <span style={{
             fontFamily: 'Unbounded,sans-serif', fontWeight: 800, fontSize: 18,
             background: 'linear-gradient(135deg,#FF2D78,#8B2FC9)',
@@ -35,6 +37,7 @@ export default function Navbar() {
           }}>NoxPrompts</span>
         </Link>
 
+        {/* Search */}
         <form onSubmit={(e) => { e.preventDefault(); if (q.trim()) router.push(`/?search=${encodeURIComponent(q)}`); }}
           style={{ flex: 1, maxWidth: 420 }}>
           <input value={q} onChange={e => setQ(e.target.value)}
@@ -48,6 +51,7 @@ export default function Navbar() {
 
         <div style={{ flex: 1 }} />
 
+        {/* Theme toggle */}
         <button onClick={toggle} style={{
           width: 40, height: 40, borderRadius: '50%',
           border: '1.5px solid var(--border)', background: 'var(--bg)',
