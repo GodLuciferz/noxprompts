@@ -106,3 +106,37 @@
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 3px; }
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+  /* Navbar */
+  .navbar-title {
+    font-size: 15px !important;
+  }
+  .navbar-search {
+    max-width: 100% !important;
+  }
+
+  /* Hero */
+  .hero-section {
+    padding: 40px 16px 24px !important;
+  }
+
+  /* Grid — 2 columns on mobile */
+  .trend-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* Card adjustments */
+  .card h3 {
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Single column on very small phones */
+  .trend-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
