@@ -1,6 +1,5 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { FiSearch } from 'react-icons/fi';
 
 interface Props {
@@ -14,7 +13,6 @@ export default function SearchBar({ allTitles, allTags, initValue = '', onChange
   const [q, setQ] = useState(initValue);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
-  const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,7 +52,6 @@ export default function SearchBar({ allTitles, allTags, initValue = '', onChange
         <input
           value={q}
           onChange={e => handleChange(e.target.value)}
-          onFocus={() => suggestions.length > 0 && setOpen(true)}
           placeholder="Search Ghibli, Neon, Anime, Dark..."
           style={{
             width: '100%', padding: '12px 20px 12px 42px', borderRadius: 50,
@@ -62,11 +59,13 @@ export default function SearchBar({ allTitles, allTags, initValue = '', onChange
             color: 'var(--text)', fontSize: 14, outline: 'none', fontFamily: 'inherit',
             transition: 'border-color 0.3s',
           }}
-          onFocus={e => { (e.target as HTMLInputElement).style.borderColor = '#FF2D78'; suggestions.length > 0 && setOpen(true); }}
+          onFocus={e => {
+            (e.target as HTMLInputElement).style.borderColor = '#FF2D78';
+            suggestions.length > 0 && setOpen(true);
+          }}
           onBlur={e => (e.target as HTMLInputElement).style.borderColor = 'var(--border)'}
         />
       </div>
-
       {open && suggestions.length > 0 && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
