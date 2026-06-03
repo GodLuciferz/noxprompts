@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID!;
-const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY!;
-const CASHFREE_ENV = process.env.CASHFREE_ENV || "production";
+const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || "1299432dc1ed72a83e8ecaa27d52349921";
+const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "cfsk_ma_prod_e6a76b3938304ee21e2bb216398948a7_b5808833";
 
-const BASE_URL = CASHFREE_ENV === "production"
-  ? "https://api.cashfree.com/pg/orders"
-  : "https://sandbox.cashfree.com/pg/orders";
+const BASE_URL = "https://api.cashfree.com/pg/orders";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -50,7 +47,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: data.message || "Payment init failed" }, { status: 500 });
     }
 
-    // Cashfree payment page URL using payment_session_id
     const paymentUrl = `https://payments.cashfree.com/forms/view/?id=${data.payment_session_id}&redirect=true`;
 
     return NextResponse.json({
