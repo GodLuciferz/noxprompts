@@ -1,4 +1,4 @@
-// app/checkout/page.tsx
+// app/checkout/page.tsx — REPLACE existing checkout page
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, Suspense } from "react";
@@ -7,6 +7,7 @@ function CheckoutContent() {
   const params = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const slug = params.get("slug") || "";
   const name = params.get("name") || "Premium Prompt";
@@ -14,39 +15,32 @@ function CheckoutContent() {
 
   const handlePay = async () => {
     setLoading(true);
+    setError("");
     try {
-      const res = await fetch("/api/payu", {
+      const res = await fetch("/api/cashfree", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           promptSlug: slug,
-          promptName: name,
+          promptName: decodeURIComponent(name),
           price: parseFloat(price),
-          userEmail: "",
-          userName: "",
         }),
       });
 
       const data = await res.json();
-      const { payuUrl, params: payuParams } = data;
 
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = payuUrl;
-      form.style.display = "none";
+      if (data.error) {
+        setError("Payment failed. Please try again.");
+        setLoading(false);
+        return;
+      }
 
-      Object.entries(payuParams).forEach(([key, value]) => {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = value as string;
-        form.appendChild(input);
-      });
+      // Redirect to Cashfree payment page
+      window.location.href = data.paymentUrl;
 
-      document.body.appendChild(form);
-      form.submit();
     } catch (err) {
       console.error(err);
+      setError("Something went wrong. Please try again.");
       setLoading(false);
     }
   };
@@ -110,7 +104,7 @@ function CheckoutContent() {
           padding: "16px 18px",
           marginBottom: 24,
         }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Order Summary
           </p>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
@@ -123,11 +117,17 @@ function CheckoutContent() {
           </div>
           <div style={{ borderTop: "1px solid var(--border)", marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
             <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text)" }}>Total</span>
-            <span style={{ fontSize: 20, fontWeight: 900, background: "linear-gradient(135deg,#FF2D78,#8B2FC9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            <span style={{ fontSize: 22, fontWeight: 900, background: "linear-gradient(135deg,#FF2D78,#8B2FC9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               ₹{price}
             </span>
           </div>
         </div>
+
+        {error && (
+          <p style={{ color: "#FF2D78", fontSize: 13, textAlign: "center", marginBottom: 12 }}>
+            ⚠️ {error}
+          </p>
+        )}
 
         {/* Pay button */}
         <button
@@ -148,7 +148,7 @@ function CheckoutContent() {
             marginBottom: 12,
           }}
         >
-          {loading ? "⏳ Redirecting to PayU..." : `💳 Pay ₹${price} Securely`}
+          {loading ? "⏳ Processing..." : `💳 Pay ₹${price} Securely`}
         </button>
 
         <button
@@ -171,9 +171,9 @@ function CheckoutContent() {
 
         {/* Trust badges */}
         <div style={{ textAlign: "center", marginTop: 20, display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>🔒 Secure Payment</span>
-          <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>✅ Powered by PayU</span>
-          <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>⚡ Instant Access</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>🔒 Secure Payment</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>✅ Powered by Cashfree</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>⚡ Instant Access</span>
         </div>
       </div>
     </div>
