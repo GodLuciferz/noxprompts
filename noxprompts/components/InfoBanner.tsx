@@ -109,6 +109,29 @@ export default function InfoBanner() {
                 ))}
               </div>
             )}
+            {/* Legal Pages */}
+<div
+  style={{
+    marginTop: 20,
+    paddingTop: 16,
+    borderTop: '1px solid var(--border)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+  }}
+>
+  <a href="/privacy" style={{ color: 'var(--text)', textDecoration: 'none', fontSize: 14 }}>
+    Privacy Policy
+  </a>
+
+  <a href="/terms" style={{ color: 'var(--text)', textDecoration: 'none', fontSize: 14 }}>
+    Terms & Conditions
+  </a>
+
+  <a href="/contact" style={{ color: 'var(--text)', textDecoration: 'none', fontSize: 14 }}>
+    Contact Us
+  </a>
+</div>
           </div>
         </div>
       )}
