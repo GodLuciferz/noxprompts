@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
 const PAYU_MERCHANT_KEY = process.env.PAYU_MERCHANT_KEY || "gtKFFx";
-const PAYU_MERCHANT_SALT = process.env.PAYU_MERCHANT_SALT || "eCwWELxi";
+const PAYU_MERCHANT_SALT = process.env.PAYU_MERCHANT_SALT || "4R38lvwiV57FwVpsgOvTXBdLE4tHUXFW";
 const PAYU_BASE_URL = process.env.PAYU_ENV === "production"
   ? "https://secure.payu.in/_payment"
   : "https://test.payu.in/_payment";
@@ -20,8 +20,8 @@ export async function POST(req: NextRequest) {
   const surl = `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/success?txnid=${txnid}&slug=${promptSlug}`;
   const furl = `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/failure?txnid=${txnid}&slug=${promptSlug}`;
 
-  // Correct PayU hash formula:
-  // key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT
+  // Exact PayU formula: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT
+  // udf1-udf5 empty + 5 more empty = 10 pipes after email
   const hashString = `${PAYU_MERCHANT_KEY}|${txnid}|${amount}|${productinfo}|${firstname}|${email}||||||||||${PAYU_MERCHANT_SALT}`;
   const hash = crypto.createHash("sha512").update(hashString).digest("hex");
 
