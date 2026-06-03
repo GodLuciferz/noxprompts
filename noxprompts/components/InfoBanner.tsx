@@ -131,6 +131,11 @@ export default function InfoBanner() {
   <a href="/contact" style={{ color: 'var(--text)', textDecoration: 'none', fontSize: 14 }}>
     Contact Us
   </a>
+
+  <a href="/refund" style={{ color: 'var(--text)', textDecoration: 'none', fontSize: 14 }}>
+    refund policy
+  </a>
+  
 </div>
           </div>
         </div>
