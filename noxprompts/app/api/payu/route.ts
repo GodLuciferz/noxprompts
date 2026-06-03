@@ -1,10 +1,8 @@
-// app/api/payu/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
-// 🔑 Replace these with your real PayU credentials after verification
-const PAYU_MERCHANT_KEY = process.env.PAYU_MERCHANT_KEY || "gtKFFx";       // Test key
-const PAYU_MERCHANT_SALT = process.env.PAYU_MERCHANT_SALT || "eCwWELxi";   // Test salt
+const PAYU_MERCHANT_KEY = process.env.PAYU_MERCHANT_KEY || "gtKFFx";
+const PAYU_MERCHANT_SALT = process.env.PAYU_MERCHANT_SALT || "eCwWELxi";
 const PAYU_BASE_URL = process.env.PAYU_ENV === "production"
   ? "https://secure.payu.in/_payment"
   : "https://test.payu.in/_payment";
@@ -22,8 +20,9 @@ export async function POST(req: NextRequest) {
   const surl = `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/success?txnid=${txnid}&slug=${promptSlug}`;
   const furl = `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/failure?txnid=${txnid}&slug=${promptSlug}`;
 
-  // PayU hash: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||salt
-  const hashString = `${PAYU_MERCHANT_KEY}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${PAYU_MERCHANT_SALT}`;
+  // Correct PayU hash formula:
+  // key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT
+  const hashString = `${PAYU_MERCHANT_KEY}|${txnid}|${amount}|${productinfo}|${firstname}|${email}||||||||||${PAYU_MERCHANT_SALT}`;
   const hash = crypto.createHash("sha512").update(hashString).digest("hex");
 
   return NextResponse.json({
@@ -39,7 +38,6 @@ export async function POST(req: NextRequest) {
       furl,
       hash,
       phone: "9999999999",
-      service_provider: "payu_paisa",
     },
   });
 }
