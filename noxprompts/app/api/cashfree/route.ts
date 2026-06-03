@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || "1299432dc1ed72a83e8ecaa27d52349921";
-const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "cfsk_ma_prod_e6a76b3938304ee21e2bb216398948a7_b5808833";
-const BASE_URL = "https://api.cashfree.com/pg/orders";
+const CASHFREE_APP_ID = "TEST11094628769e0070cbf5fa23671782649011";
+const CASHFREE_SECRET_KEY = "TESTSKd01740691e6d1e3b78e0bdb1c5aebbca5cb0765b";
+const BASE_URL = "https://sandbox.cashfree.com/pg/orders";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
     order_currency: "INR",
     customer_details: {
       customer_id: `cust${Date.now()}`,
-      customer_name: "User",
-      customer_email: "user@noxprompts.com",
+      customer_name: "Test User",
+      customer_email: "test@noxprompts.com",
       customer_phone: "9999999999",
     },
     order_meta: {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: data.message || "Payment init failed" }, { status: 500 });
     }
 
-    const paymentUrl = `https://payments.cashfree.com/forms/view/?id=${data.payment_session_id}&redirect=true`;
+    const paymentUrl = `https://payments-test.cashfree.com/forms/view/?id=${data.payment_session_id}&redirect=true`;
 
     return NextResponse.json({
       paymentUrl,
