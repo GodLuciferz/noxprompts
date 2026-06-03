@@ -44,6 +44,8 @@ function toTrend(row: any): Trend {
     prompt: row.prompt,
     description: row.description,
     isTrending: row.is_trending,
+    isPaid: row.is_paid || false,       // ← ADD
+    price: row.price || 0,
     copyCount: row.copy_count,
     createdAt: row.created_at,
   };
@@ -98,6 +100,8 @@ export async function saveTrend(trend: Trend): Promise<void> {
     prompt: trend.prompt,
     description: trend.description,
     is_trending: trend.isTrending,
+    is_paid: trend.isPaid || false,     // ← ADD
+    price: trend.price || 0,
     copy_count: trend.copyCount,
     created_at: trend.createdAt,
   });
