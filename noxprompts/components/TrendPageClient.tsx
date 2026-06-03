@@ -83,43 +83,54 @@ export default function TrendPageClient({ trend, related }: { trend: Trend; rela
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{trend.copyCount || 0} copies</span>
         </div>
 
-        <div style={{
-          background: 'var(--bg)', borderRadius: 12, padding: '16px',
-          fontSize: 14, lineHeight: 1.7, color: 'var(--text)',
-          fontFamily: 'monospace', marginBottom: 16, wordBreak: 'break-word',
-          border: '1px solid var(--border)',
-        }}>
-          {trend.prompt}
-        </div>
+        {trend.isPaid ? (
+          <LockedPrompt
+            promptSlug={trend.slug}
+            promptName={trend.title}
+            price={trend.price || 9}
+            previewText={trend.prompt.substring(0, 60)}
+          />
+        ) : (
+          <>
+            <div style={{
+              background: 'var(--bg)', borderRadius: 12, padding: '16px',
+              fontSize: 14, lineHeight: 1.7, color: 'var(--text)',
+              fontFamily: 'monospace', marginBottom: 16, wordBreak: 'break-word',
+              border: '1px solid var(--border)',
+            }}>
+              {trend.prompt}
+            </div>
 
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button onClick={copyPrompt} className="btn-primary" style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: copied
-              ? 'linear-gradient(135deg,#00C851,#007E33)'
-              : 'linear-gradient(135deg,#FF2D78,#8B2FC9)',
-          }}>
-            {copied ? <><FiCheck size={15} /> Copied!</> : <><FiCopy size={15} /> Copy Prompt</>}
-          </button>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button onClick={copyPrompt} className="btn-primary" style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: copied
+                  ? 'linear-gradient(135deg,#00C851,#007E33)'
+                  : 'linear-gradient(135deg,#FF2D78,#8B2FC9)',
+              }}>
+                {copied ? <><FiCheck size={15} /> Copied!</> : <><FiCopy size={15} /> Copy Prompt</>}
+              </button>
 
-          <button onClick={tryPrompt} style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: 'rgba(0,200,255,0.1)', border: '1.5px solid rgba(0,200,255,0.3)',
-            color: 'var(--cyan)', padding: '11px 20px', borderRadius: 50,
-            fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-          }}>
-            <FiExternalLink size={14} /> Try on ChatGPT
-          </button>
+              <button onClick={tryPrompt} style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'rgba(0,200,255,0.1)', border: '1.5px solid rgba(0,200,255,0.3)',
+                color: 'var(--cyan)', padding: '11px 20px', borderRadius: 50,
+                fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              }}>
+                <FiExternalLink size={14} /> Try on ChatGPT
+              </button>
 
-          <button onClick={share} style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: 'none', border: '1.5px solid var(--border)',
-            color: 'var(--text-muted)', padding: '11px 20px', borderRadius: 50,
-            fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-          }}>
-            <FiShare2 size={14} /> Share
-          </button>
-        </div>
+              <button onClick={share} style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'none', border: '1.5px solid var(--border)',
+                color: 'var(--text-muted)', padding: '11px 20px', borderRadius: 50,
+                fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              }}>
+                <FiShare2 size={14} /> Share
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Description */}
