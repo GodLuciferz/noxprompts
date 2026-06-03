@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 
 interface LockedPromptProps {
   promptSlug: string;
@@ -14,35 +13,10 @@ export default function LockedPrompt({
   price,
   previewText,
 }: LockedPromptProps) {
-  const [loading, setLoading] = useState(false);
 
-  const handleUnlock = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/payu", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ promptSlug, promptName, price, userEmail: "", userName: "" }),
-      });
-      const data = await res.json();
-      const { payuUrl, params } = data;
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = payuUrl;
-      form.style.display = "none";
-      Object.entries(params).forEach(([key, value]) => {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = value as string;
-        form.appendChild(input);
-      });
-      document.body.appendChild(form);
-      form.submit();
-    } catch (err) {
-      console.error("PayU error:", err);
-      setLoading(false);
-    }
+  const handleUnlock = () => {
+    // Redirect to checkout page instead of directly to PayU
+    window.location.href = `/checkout?slug=${promptSlug}&name=${encodeURIComponent(promptName)}&price=${price}`;
   };
 
   return (
@@ -52,9 +26,7 @@ export default function LockedPrompt({
       background: 'var(--bg)',
       padding: '24px 20px',
       textAlign: 'center',
-      marginBottom: 0,
     }}>
-      {/* Blurred preview */}
       <div style={{
         fontSize: 13,
         fontFamily: 'monospace',
@@ -68,7 +40,6 @@ export default function LockedPrompt({
         {previewText}...
       </div>
 
-      {/* Lock + button */}
       <div style={{ fontSize: 30, marginBottom: 8 }}>🔒</div>
       <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>
         Premium Prompt
@@ -79,7 +50,6 @@ export default function LockedPrompt({
 
       <button
         onClick={handleUnlock}
-        disabled={loading}
         style={{
           display: 'inline-block',
           padding: '12px 36px',
@@ -90,13 +60,11 @@ export default function LockedPrompt({
           fontWeight: 800,
           fontSize: 15,
           fontFamily: 'inherit',
-          cursor: loading ? 'not-allowed' : 'pointer',
-          opacity: loading ? 0.7 : 1,
+          cursor: 'pointer',
           boxShadow: '0 4px 24px rgba(255,45,120,0.45)',
-          letterSpacing: '0.01em',
         }}
       >
-        {loading ? '⏳ Redirecting...' : `🔓 Unlock for ₹${price}`}
+        🔓 Unlock for ₹{price}
       </button>
     </div>
   );
