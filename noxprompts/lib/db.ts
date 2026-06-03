@@ -15,6 +15,8 @@ export interface Trend {
   prompt: string;
   description: string;
   isTrending: boolean;
+  isPaid?: boolean;
+  price?: number;
   copyCount: number;
   createdAt: string;
 }
