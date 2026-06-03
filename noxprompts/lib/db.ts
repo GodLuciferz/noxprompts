@@ -1,10 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
-
 export interface Trend {
   id: string;
   slug: string;
@@ -20,19 +18,16 @@ export interface Trend {
   copyCount: number;
   createdAt: string;
 }
-
 export interface SiteLink {
   label: string;
   url: string;
   icon?: string;
 }
-
 export interface SiteInfo {
   title: string;
   description: string;
   links: SiteLink[];
 }
-
 function toTrend(row: any): Trend {
   return {
     id: row.id,
@@ -44,13 +39,12 @@ function toTrend(row: any): Trend {
     prompt: row.prompt,
     description: row.description,
     isTrending: row.is_trending,
-    isPaid: row.is_paid || false,       // ← ADD
+    isPaid: row.is_paid || false,
     price: row.price || 0,
     copyCount: row.copy_count,
     createdAt: row.created_at,
   };
 }
-
 export async function getAllTrends(): Promise<Trend[]> {
   try {
     const { data, error } = await supabase
@@ -64,7 +58,6 @@ export async function getAllTrends(): Promise<Trend[]> {
     return [];
   }
 }
-
 export async function getTrendBySlug(slug: string): Promise<Trend | null> {
   try {
     const { data, error } = await supabase
@@ -76,7 +69,6 @@ export async function getTrendBySlug(slug: string): Promise<Trend | null> {
     return toTrend(data);
   } catch { return null; }
 }
-
 export async function getRelatedTrends(slug: string, category: string): Promise<Trend[]> {
   try {
     const { data } = await supabase
@@ -88,7 +80,6 @@ export async function getRelatedTrends(slug: string, category: string): Promise<
     return (data || []).map(toTrend);
   } catch { return []; }
 }
-
 export async function saveTrend(trend: Trend): Promise<void> {
   const { error } = await supabase.from('trends').upsert({
     id: trend.id,
@@ -100,18 +91,16 @@ export async function saveTrend(trend: Trend): Promise<void> {
     prompt: trend.prompt,
     description: trend.description,
     is_trending: trend.isTrending,
-    is_paid: trend.isPaid || false,     // ← ADD
+    is_paid: trend.isPaid || false,
     price: trend.price || 0,
     copy_count: trend.copyCount,
     created_at: trend.createdAt,
   });
   if (error) console.error('saveTrend error:', error);
 }
-
 export async function deleteTrend(slug: string): Promise<void> {
   await supabase.from('trends').delete().eq('slug', slug);
 }
-
 export async function incrementCopyCount(slug: string): Promise<void> {
   try {
     const { data } = await supabase
@@ -127,7 +116,6 @@ export async function incrementCopyCount(slug: string): Promise<void> {
     }
   } catch {}
 }
-
 export const CATEGORIES = [
   'All','Anime','Ghibli','Realistic','Dark','Cute',
   'Neon','Fantasy','Vintage','Minimalist','Sci-Fi','Nature',
