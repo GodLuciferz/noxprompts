@@ -6,6 +6,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { FiCopy, FiCheck, FiShare2, FiArrowLeft, FiExternalLink } from 'react-icons/fi';
 import TrendCard from './TrendCard';
+import LockedPrompt from './LockedPrompt';
 
 export default function TrendPageClient({ trend, related }: { trend: Trend; related: Trend[] }) {
   const [copied, setCopied] = useState(false);
