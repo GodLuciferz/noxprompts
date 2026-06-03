@@ -21,6 +21,8 @@ export default function AdminPage() {
   const [prompt, setPrompt] = useState('');
   const [description, setDescription] = useState('');
   const [isTrending, setIsTrending] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
+  const [price, setPrice] = useState(9);
   const [imageUrl, setImageUrl] = useState('');
   const [imagePreview, setImagePreview] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -73,7 +75,8 @@ export default function AdminPage() {
 
   function resetForm() {
     setTitle(''); setCategory('Anime'); setTags(''); setPrompt('');
-    setDescription(''); setIsTrending(false); setImageUrl(''); setImagePreview('');
+    setDescription(''); setIsTrending(false); setIsPaid(false); setPrice(9);
+    setImageUrl(''); setImagePreview('');
     setEditTrend(null);
   }
 
@@ -81,6 +84,7 @@ export default function AdminPage() {
     setEditTrend(t);
     setTitle(t.title); setCategory(t.category); setTags(t.tags.join(', '));
     setPrompt(t.prompt); setDescription(t.description); setIsTrending(t.isTrending);
+    setIsPaid(t.isPaid || false); setPrice(t.price || 9);
     setImageUrl(t.imageUrl); setImagePreview(t.imageUrl);
     setTab('add');
   }
@@ -90,7 +94,7 @@ export default function AdminPage() {
     const body = {
       title, category,
       tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-      prompt, description, isTrending, imageUrl,
+      prompt, description, isTrending, isPaid, price: isPaid ? price : 0, imageUrl,
       ...(editTrend ? { slug: editTrend.slug } : {}),
     };
     const res = await fetch('/api/trends/manage', {
@@ -203,6 +207,11 @@ export default function AdminPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <span style={{ fontFamily: 'Unbounded,sans-serif', fontWeight: 700, fontSize: 13 }}>{t.title}</span>
                       {t.isTrending && <span className="hot-badge">🔥</span>}
+                      {t.isPaid && (
+                        <span style={{ background: 'linear-gradient(135deg,#8B2FC9,#FF2D78)', color: '#fff', fontSize: 10, padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>
+                          💎 ₹{t.price}
+                        </span>
+                      )}
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                       <span>{t.category}</span>
@@ -271,12 +280,41 @@ export default function AdminPage() {
               <label style={labelStyle}>Description</label>
               <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe this art style..." rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
             </div>
+
+            {/* Trending Toggle */}
             <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div onClick={() => setIsTrending(!isTrending)} style={{ width: 48, height: 26, borderRadius: 13, background: isTrending ? 'linear-gradient(135deg,#FF6B00,#FFD000)' : 'var(--border)', position: 'relative', cursor: 'pointer', transition: 'background 0.3s' }}>
                 <div style={{ position: 'absolute', top: 3, left: isTrending ? 25 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.3s', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }} />
               </div>
               <span style={{ fontSize: 14, fontWeight: 600 }}>🔥 Mark as Trending</span>
             </div>
+
+            {/* 💎 Paid Toggle */}
+            <div style={{ gridColumn: '1/-1', background: 'rgba(139,47,201,0.08)', border: '1.5px solid rgba(139,47,201,0.2)', borderRadius: 14, padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', marginBottom: 3 }}>💎 Paid Prompt</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Users must pay to unlock this prompt</p>
+                </div>
+                <div onClick={() => setIsPaid(!isPaid)} style={{ width: 48, height: 26, borderRadius: 13, background: isPaid ? 'linear-gradient(135deg,#8B2FC9,#FF2D78)' : 'var(--border)', position: 'relative', cursor: 'pointer', transition: 'background 0.3s', flexShrink: 0 }}>
+                  <div style={{ position: 'absolute', top: 3, left: isPaid ? 25 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.3s', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }} />
+                </div>
+              </div>
+              {isPaid && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
+                  <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--purple)' }}>₹</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={price}
+                    onChange={e => setPrice(Number(e.target.value))}
+                    style={{ ...inputStyle, width: 100 }}
+                  />
+                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>per unlock</span>
+                </div>
+              )}
+            </div>
+
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
             <button className="btn-primary" onClick={handleSubmit}>{editTrend ? '✅ Update' : '🚀 Add Trend'}</button>
