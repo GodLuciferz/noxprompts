@@ -21,6 +21,8 @@ export async function POST(req: NextRequest) {
     prompt: body.prompt,
     description: body.description,
     isTrending: body.isTrending || false,
+    isPaid: body.isPaid || false,
+    price: body.isPaid ? (body.price || 9) : 0,
     copyCount: 0,
     createdAt: new Date().toISOString(),
   };
