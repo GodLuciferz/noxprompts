@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { Trend } from '@/lib/db';
 import TrendCard from './TrendCard';
 import SearchBar from './SearchBar';
+import InstagramServices from './InstagramServices';
 import { FiZap } from 'react-icons/fi';
 
 interface Props {
@@ -117,6 +118,11 @@ export default function HomeClient({ allTrends, initSearch, initCategory, catego
             </div>
           )}
         </section>
+      </div>
+
+      {/* Instagram SMM Services */}
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 48, marginTop: 8 }}>
+        <InstagramServices />
       </div>
     </div>
   );
