@@ -1,14 +1,22 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { FiInstagram, FiChevronDown, FiShoppingCart, FiAlertCircle, FiZap, FiInfo } from 'react-icons/fi';
+import { FiInstagram, FiChevronDown, FiShoppingCart, FiAlertCircle, FiZap, FiInfo, FiLock } from 'react-icons/fi';
 
-const MARKUP = 1.30; // 30% commission
+declare global {
+  interface Window {
+    Cashfree: (config: { mode: string }) => {
+      checkout: (options: { paymentSessionId: string; redirectTarget: string }) => void;
+    };
+  }
+}
+
+const MARKUP = 1.30;
 
 interface SMMService {
   service: number;
   name: string;
   type: string;
-  rate: string; // INR per 1000
+  rate: string;
   min: string;
   max: string;
   category: string;
@@ -28,15 +36,23 @@ export default function InstagramServices() {
   const [link, setLink] = useState('');
   const [quantity, setQuantity] = useState(0);
   const [qtyError, setQtyError] = useState('');
-  const [orderStatus, setOrderStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [orderMsg, setOrderMsg] = useState('');
+  const [payStatus, setPayStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [payError, setPayError] = useState('');
 
   const categories = Array.from(new Set(services.map(s => s.category))).filter(Boolean);
   const catServices = services.filter(s => s.category === selectedCategory);
 
-  // Price helpers — apply 30% markup
   const markedRate = (rate: string) => parseFloat(rate) * MARKUP;
   const priceFor = (rate: string, qty: number) => ((markedRate(rate) / 1000) * qty).toFixed(2);
+
+  // Load Cashfree SDK
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => { document.body.removeChild(script); };
+  }, []);
 
   useEffect(() => {
     fetch('/api/smm/instagram')
@@ -57,22 +73,14 @@ export default function InstagramServices() {
   }, []);
 
   const selectCategory = (cat: string) => {
-    setSelectedCategory(cat);
-    setCatOpen(false);
+    setSelectedCategory(cat); setCatOpen(false);
     const first = services.find(s => s.category === cat);
-    if (first) {
-      setSelectedService(first);
-      setQuantity(parseInt(first.min) || 10);
-      setQtyError('');
-    }
+    if (first) { setSelectedService(first); setQuantity(parseInt(first.min) || 10); setQtyError(''); }
   };
 
   const selectService = (svc: SMMService) => {
-    setSelectedService(svc);
-    setSvcOpen(false);
-    setQuantity(parseInt(svc.min) || 10);
-    setQtyError('');
-    setOrderStatus('idle');
+    setSelectedService(svc); setSvcOpen(false);
+    setQuantity(parseInt(svc.min) || 10); setQtyError(''); setPayStatus('idle');
   };
 
   const handleQuantityChange = (val: string) => {
@@ -86,48 +94,57 @@ export default function InstagramServices() {
     else setQtyError('');
   };
 
-  const handleOrder = async () => {
+  const handlePayment = async () => {
     if (!selectedService || !link || qtyError) return;
-    const min = parseInt(selectedService.min);
-    const max = parseInt(selectedService.max);
-    if (quantity < min || quantity > max) return;
+    const price = priceFor(selectedService.rate, quantity);
 
-    setOrderStatus('loading');
+    setPayStatus('loading');
+    setPayError('');
+
     try {
-      const res = await fetch('/api/smm/order', {
+      // Create Cashfree order
+      const res = await fetch('/api/cashfree', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ service: selectedService.service, link, quantity }),
+        body: JSON.stringify({
+          type: 'smm',
+          serviceId: selectedService.service,
+          serviceName: selectedService.name,
+          quantity,
+          link,
+          price,
+        }),
       });
+
       const data = await res.json();
-      if (data.order) {
-        setOrderStatus('success');
-        setOrderMsg(`Order #${data.order} placed successfully!`);
-        setLink('');
-      } else {
-        setOrderStatus('error');
-        setOrderMsg(data.error || 'Order failed. Try again.');
+
+      if (!data.sessionId) {
+        setPayStatus('error');
+        setPayError(data.error || 'Payment initiation failed.');
+        return;
       }
+
+      // Open Cashfree checkout
+      const cashfree = window.Cashfree({ mode: 'production' });
+      cashfree.checkout({
+        paymentSessionId: data.sessionId,
+        redirectTarget: '_self',
+      });
+
     } catch {
-      setOrderStatus('error');
-      setOrderMsg('Network error. Please try again.');
+      setPayStatus('error');
+      setPayError('Network error. Please try again.');
     }
   };
 
-  const canOrder = link && !qtyError && quantity > 0 && selectedService && orderStatus !== 'loading';
+  const canOrder = link && !qtyError && quantity > 0 && selectedService && payStatus !== 'loading';
 
   const inputStyle = (hasError?: boolean): React.CSSProperties => ({
-    width: '100%',
-    background: 'var(--bg)',
+    width: '100%', background: 'var(--bg)',
     border: `1px solid ${hasError ? '#FF2D78' : 'var(--border)'}`,
-    color: 'var(--text)',
-    padding: '12px 16px',
-    borderRadius: 12,
-    fontSize: 14,
-    outline: 'none',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.2s',
+    color: 'var(--text)', padding: '12px 16px', borderRadius: 12,
+    fontSize: 14, outline: 'none', fontFamily: 'inherit',
+    boxSizing: 'border-box', transition: 'border-color 0.2s',
   });
 
   const labelStyle: React.CSSProperties = {
@@ -151,13 +168,13 @@ export default function InstagramServices() {
   };
 
   return (
-    <section style={{ maxWidth: 1280, margin: '0 auto', padding: '0 16px 80px' }}>
+    <section id="instagram-services" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 16px 80px' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
         <div style={{
           width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-          background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+          background: 'linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <FiInstagram size={22} color="#fff" />
@@ -263,7 +280,6 @@ export default function InstagramServices() {
                         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {svc.name}
                         </span>
-                        {/* Show marked-up price clearly */}
                         <span style={{ fontSize: 12, color: 'var(--pink)', flexShrink: 0, fontWeight: 700, whiteSpace: 'nowrap' }}>
                           ₹{displayRate}/1K
                         </span>
@@ -345,7 +361,6 @@ export default function InstagramServices() {
                 onChange={e => handleQuantityChange(e.target.value)}
                 style={inputStyle(!!qtyError)}
               />
-              {/* Red error message */}
               {qtyError && (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 6,
@@ -361,13 +376,13 @@ export default function InstagramServices() {
           {/* Price Summary */}
           {selectedService && !qtyError && quantity > 0 && (
             <div style={{
-              background: 'linear-gradient(135deg, rgba(255,45,120,0.06), rgba(139,47,201,0.06))',
+              background: 'linear-gradient(135deg,rgba(255,45,120,0.06),rgba(139,47,201,0.06))',
               border: '1px solid rgba(255,45,120,0.2)',
               borderRadius: 14, padding: '16px 20px', marginBottom: 20,
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
             }}>
               <div>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Estimated Total</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Total Payable</p>
                 <p style={{ fontSize: 28, fontWeight: 700, color: 'var(--pink)', margin: '2px 0 0', fontFamily: 'Unbounded,sans-serif' }}>
                   ₹{priceFor(selectedService.rate, quantity)}
                 </p>
@@ -383,26 +398,19 @@ export default function InstagramServices() {
             </div>
           )}
 
-          {/* Order Status */}
-          {orderStatus === 'success' && (
-            <div style={{
-              background: 'rgba(0,200,100,0.1)', border: '1px solid rgba(0,200,100,0.3)',
-              borderRadius: 12, padding: '14px 16px', marginBottom: 16,
-              color: '#00C864', fontSize: 14, fontWeight: 600,
-            }}>✅ {orderMsg}</div>
-          )}
-          {orderStatus === 'error' && (
+          {/* Pay Error */}
+          {payStatus === 'error' && (
             <div style={{
               background: 'rgba(255,45,120,0.08)', border: '1px solid rgba(255,45,120,0.3)',
               borderRadius: 12, padding: '14px 16px', marginBottom: 16,
               color: 'var(--pink)', fontSize: 14, fontWeight: 600,
-            }}>❌ {orderMsg}</div>
+            }}>❌ {payError}</div>
           )}
 
-          {/* Submit */}
+          {/* Pay Button */}
           <button
             className="btn-primary"
-            onClick={handleOrder}
+            onClick={handlePayment}
             disabled={!canOrder}
             style={{
               width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -411,8 +419,15 @@ export default function InstagramServices() {
               cursor: canOrder ? 'pointer' : 'not-allowed',
             }}
           >
-            {orderStatus === 'loading' ? '⏳ Processing...' : <><FiShoppingCart size={18} /> Place Order</>}
+            {payStatus === 'loading'
+              ? '⏳ Initiating Payment...'
+              : <><FiLock size={16} /> Pay & Place Order — ₹{selectedService && !qtyError ? priceFor(selectedService.rate, quantity) : '0'}</>
+            }
           </button>
+
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 10 }}>
+            🔒 Secure payment via Cashfree · UPI, Cards, Net Banking accepted
+          </p>
         </div>
       )}
     </section>
