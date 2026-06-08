@@ -39,7 +39,7 @@ function CheckoutContent() {
       cashfreeScript.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
       cashfreeScript.onload = () => {
         // @ts-ignore
-        const cashfree = window.Cashfree({ mode: "sandbox" });
+        const cashfree = window.Cashfree({ mode: "production" });
         cashfree.checkout({
           paymentSessionId: data.sessionId,
           redirectTarget: "_self",
