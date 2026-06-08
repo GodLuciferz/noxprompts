@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { Trend, CATEGORIES } from '@/lib/db';
-import { FiPlus, FiTrash2, FiEdit2, FiLogOut, FiUpload, FiZap, FiInfo, FiLink, FiX } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiEdit2, FiLogOut, FiUpload, FiZap, FiInfo, FiLink, FiX, FiShoppingBag, FiDollarSign, FiRefreshCw } from 'react-icons/fi';
 
 const PASS = '@noxstudio123';
 
@@ -11,7 +11,12 @@ export default function AdminPage() {
   const [pw, setPw] = useState('');
   const [trends, setTrends] = useState<Trend[]>([]);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'list' | 'add' | 'info'>('list');
+  const [tab, setTab] = useState<'list' | 'add' | 'info' | 'smm'>('list');
+
+  // SMM state
+  const [smmBalance, setSmmBalance] = useState('...');
+  const [smmCurrency, setSmmCurrency] = useState('INR');
+  const [smmLoading, setSmmLoading] = useState(false);
   const [editTrend, setEditTrend] = useState<Trend | null>(null);
 
   // Trend form
@@ -34,7 +39,7 @@ export default function AdminPage() {
   const [links, setLinks] = useState<{label:string;url:string;icon:string}[]>([]);
 
   useEffect(() => {
-    if (authed) { fetchTrends(); fetchInfo(); }
+    if (authed) { fetchTrends(); fetchInfo(); fetchSmmBalance(); }
   }, [authed]);
 
   async function fetchTrends() {
@@ -51,6 +56,21 @@ export default function AdminPage() {
     setInfoTitle(data.title || '');
     setInfoDesc(data.description || '');
     setLinks(data.links || []);
+  }
+
+  async function fetchSmmBalance() {
+    setSmmLoading(true);
+    try {
+      const res = await fetch('/api/admin/smm-orders', {
+        headers: { 'x-admin-password': PASS },
+      });
+      const data = await res.json();
+      setSmmBalance(data.balance || '0');
+      setSmmCurrency(data.currency || 'INR');
+    } catch {
+      setSmmBalance('Error');
+    }
+    setSmmLoading(false);
   }
 
   async function handleImageUpload(file: File) {
@@ -174,7 +194,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-        {([['list','📋 Trends'], ['add', editTrend ? '✏️ Edit' : '➕ Add'], ['info','ℹ️ Info & Links']] as const).map(([t, label]) => (
+        {([['list','📋 Trends'], ['add', editTrend ? '✏️ Edit' : '➕ Add'], ['info','ℹ️ Info & Links'], ['smm', '📦 SMM Orders']] as const).map(([t, label]) => (
           <button key={t} onClick={() => { setTab(t); if (t === 'list') resetForm(); }}
             style={{
               padding: '8px 20px', borderRadius: 50, fontWeight: 700, cursor: 'pointer',
@@ -373,9 +393,93 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+      {/* SMM ORDERS TAB */}
+      {tab === 'smm' && (
+        <div>
+          {/* Stats Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
+            {/* EasySMM Balance */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.04em' }}>EASYSMM BALANCE</p>
+                <button onClick={fetchSmmBalance} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}>
+                  <FiRefreshCw size={13} style={{ animation: smmLoading ? 'spin 1s linear infinite' : 'none' }} />
+                </button>
+              </div>
+              <p style={{ fontSize: 28, fontWeight: 900, color: 'var(--purple)', fontFamily: 'Unbounded,sans-serif' }}>
+                ₹{smmLoading ? '...' : parseFloat(smmBalance).toFixed(2)}
+              </p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Available to spend on orders</p>
+            </div>
+
+            {/* Your Earnings Note */}
+            <div style={{ background: 'linear-gradient(135deg,rgba(255,45,120,0.08),rgba(139,47,201,0.08))', border: '1px solid rgba(255,45,120,0.2)', borderRadius: 16, padding: '20px 24px' }}>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 8 }}>YOUR MARKUP</p>
+              <p style={{ fontSize: 28, fontWeight: 900, color: 'var(--pink)', fontFamily: 'Unbounded,sans-serif' }}>30%</p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>On every order placed</p>
+            </div>
+
+            {/* Quick Links */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px 24px' }}>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 12 }}>QUICK LINKS</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <a href="https://easysmmpanel.com/orders" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--purple)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <FiShoppingBag size={13} /> View All Orders →
+                </a>
+                <a href="https://easysmmpanel.com/add-funds" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--pink)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <FiDollarSign size={13} /> Add Funds to EasySMM →
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* How earnings work */}
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '24px', marginBottom: 24 }}>
+            <h3 style={{ fontFamily: 'Unbounded,sans-serif', fontSize: 15, fontWeight: 800, marginBottom: 16 }}>💰 Earnings Breakdown</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+              {[
+                { label: 'EasySMM Rate', val: '₹X / 1000', color: 'var(--text-muted)' },
+                { label: 'Your Price (30% markup)', val: '₹X × 1.30', color: 'var(--purple)' },
+                { label: 'User Pays', val: 'Cashfree → Your Account', color: 'var(--pink)' },
+                { label: 'EasySMM Charges', val: 'From EasySMM Wallet', color: '#00C864' },
+              ].map(item => (
+                <div key={item.label} style={{ background: 'var(--bg)', borderRadius: 12, padding: '14px 16px', border: '1px solid var(--border)' }}>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>{item.label}</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: item.color }}>{item.val}</p>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 16, padding: '14px 16px', background: 'rgba(0,200,100,0.06)', border: '1px solid rgba(0,200,100,0.2)', borderRadius: 12 }}>
+              <p style={{ fontSize: 13, color: '#00C864', fontWeight: 700 }}>
+                ✅ Net Profit = 30% of every order amount goes directly to your Cashfree account
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                EasySMM wallet se actual service cost deduct hoti hai. Make sure EasySMM wallet mein sufficient balance ho.
+              </p>
+            </div>
+          </div>
+
+          {/* Alert if balance low */}
+          {parseFloat(smmBalance) < 50 && !smmLoading && smmBalance !== '...' && (
+            <div style={{ background: 'rgba(255,45,120,0.08)', border: '1px solid rgba(255,45,120,0.3)', borderRadius: 14, padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 24 }}>⚠️</span>
+              <div>
+                <p style={{ fontWeight: 700, color: 'var(--pink)', fontSize: 14 }}>EasySMM Balance Low!</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                  Balance ₹{smmBalance} hai — orders fail ho sakte hain. 
+                  <a href="https://easysmmpanel.com/add-funds" target="_blank" rel="noreferrer" style={{ color: 'var(--pink)', marginLeft: 6, fontWeight: 700 }}>Add funds →</a>
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }
+
+
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '11px 14px', borderRadius: 12,
