@@ -95,7 +95,7 @@ export default function InstagramServices() {
   };
 
   const priceINR = selectedService && quantity
-    ? ((parseFloat(selectedService.rate) / 1000) * quantity * 83).toFixed(2)
+    ? ((parseFloat(selectedService.rate) / 1000) * quantity).toFixed(2)
     : '0.00';
 
   const inputStyle: React.CSSProperties = {
@@ -281,7 +281,7 @@ export default function InstagramServices() {
                         {svc.name}
                       </span>
                       <span style={{ fontSize: 11, color: 'var(--pink)', flexShrink: 0, fontWeight: 700 }}>
-                        ₹{(parseFloat(svc.rate) * 83 / 1000).toFixed(3)}/1K
+                        ₹{(parseFloat(svc.rate) / 1000).toFixed(4)}/1K
                       </span>
                     </button>
                   ))}
@@ -317,7 +317,7 @@ export default function InstagramServices() {
                 ['⚡ Type', selectedService.type],
                 ['📉 Min', Number(selectedService.min).toLocaleString()],
                 ['📈 Max', Number(selectedService.max).toLocaleString()],
-                ['💰 Rate', `₹${(parseFloat(selectedService.rate) * 83 / 1000).toFixed(4)}/1K`],
+                ['💰 Rate', `₹${(parseFloat(selectedService.rate) / 1000).toFixed(4)}/1K`],
               ].map(([label, val]) => (
                 <div key={label} style={{
                   background: 'rgba(139,47,201,0.08)',
