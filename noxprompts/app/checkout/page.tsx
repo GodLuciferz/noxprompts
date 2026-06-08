@@ -84,7 +84,7 @@ function CheckoutContent() {
 
         <div style={{ background: "rgba(139,47,201,0.08)", border: "1.5px solid rgba(139,47,201,0.2)", borderRadius: 14, padding: "14px 18px", marginBottom: 20 }}>
           <p style={{ fontSize: 11, color: "var(--text-muted)", margin: "0 0 4px", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>Prompt</p>
-          <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0 }}>{decodeURIComponent(name)}</p>
+          <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0, filter: "blur(5px)", userSelect: "none", pointerEvents: "none" }}>{decodeURIComponent(name)}</p>
         </div>
 
         <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 14, padding: "16px 18px", marginBottom: 24 }}>
