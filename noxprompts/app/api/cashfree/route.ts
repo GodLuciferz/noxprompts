@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: data.message || "Payment init failed" }, { status: 500 });
     }
 
-    const paymentUrl = `https://payments-test.cashfree.com/forms/view/?id=${data.payment_session_id}&redirect=true`;
+   const paymentUrl = `https://payments-test.cashfree.com/order-details?sessionId=${data.payment_session_id}`;
 
     return NextResponse.json({
       paymentUrl,
