@@ -2,7 +2,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Trend } from '@/lib/db';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { FiCopy, FiCheck, FiShare2, FiArrowLeft, FiExternalLink } from 'react-icons/fi';
 import TrendCard from './TrendCard';
@@ -10,6 +11,8 @@ import LockedPrompt from './LockedPrompt';
 
 export default function TrendPageClient({ trend, related }: { trend: Trend; related: Trend[] }) {
   const [copied, setCopied] = useState(false);
+  const searchParams = useSearchParams();
+  const isUnlocked = searchParams.get('unlocked') === 'true';
 
   const copyPrompt = async () => {
     await navigator.clipboard.writeText(trend.prompt);
@@ -33,6 +36,9 @@ export default function TrendPageClient({ trend, related }: { trend: Trend; rela
     window.open(`https://chatgpt.com/?q=${encodeURIComponent(trend.prompt)}`, '_blank');
   };
 
+  // Show unlocked content if paid and unlocked via URL param
+  const showPrompt = !trend.isPaid || isUnlocked;
+
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '28px 16px 80px' }}>
       {/* Back */}
@@ -53,6 +59,13 @@ export default function TrendPageClient({ trend, related }: { trend: Trend; rela
             border: '1px solid rgba(139,47,201,0.25)',
             fontSize: 12, padding: '4px 12px', borderRadius: 50, fontWeight: 600,
           }}>{trend.category}</span>
+          {trend.isPaid && isUnlocked && (
+            <span style={{
+              background: 'rgba(0,200,81,0.12)', color: '#00C851',
+              border: '1px solid rgba(0,200,81,0.25)',
+              fontSize: 12, padding: '4px 12px', borderRadius: 50, fontWeight: 600,
+            }}>✅ Unlocked</span>
+          )}
         </div>
         <h1 style={{
           fontFamily: 'Unbounded,sans-serif',
@@ -83,14 +96,7 @@ export default function TrendPageClient({ trend, related }: { trend: Trend; rela
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{trend.copyCount || 0} copies</span>
         </div>
 
-        {trend.isPaid ? (
-          <LockedPrompt
-            promptSlug={trend.slug}
-            promptName={trend.title}
-            price={trend.price || 9}
-            previewText={trend.prompt.substring(0, 60)}
-          />
-        ) : (
+        {showPrompt ? (
           <>
             <div style={{
               background: 'var(--bg)', borderRadius: 12, padding: '16px',
@@ -130,6 +136,13 @@ export default function TrendPageClient({ trend, related }: { trend: Trend; rela
               </button>
             </div>
           </>
+        ) : (
+          <LockedPrompt
+            promptSlug={trend.slug}
+            promptName={trend.title}
+            price={trend.price || 9}
+            previewText={trend.prompt.substring(0, 60)}
+          />
         )}
       </div>
 
