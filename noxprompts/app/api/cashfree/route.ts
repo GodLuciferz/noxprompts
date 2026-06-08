@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const CASHFREE_APP_ID = "TEST11094628769e0070cbf5fa23671782649011";
-const CASHFREE_SECRET_KEY = "TESTSKd01740691e6d1e3b78e0bdb1c5aebbca5cb0765b";
+const CASHFREE_SECRET_KEY = "cfsk_ma_test_916a64f320b6f8023f15a295fd294ed5_4bd6dfdc";
 const BASE_URL = "https://sandbox.cashfree.com/pg/orders";
 
 export async function POST(req: NextRequest) {
