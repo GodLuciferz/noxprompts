@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     },
     order_meta: {
       return_url: `${siteUrl}/checkout/success?txnid=${orderId}&slug=${promptSlug}`,
+      notify_url: `${siteUrl}/api/cashfree/webhook`,
     },
     order_note: `NoxPrompts - ${promptName}`,
   };
@@ -46,12 +47,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: data.message || "Payment init failed" }, { status: 500 });
     }
 
-   const paymentUrl = `https://payments-test.cashfree.com/pgbillpayuiapp?order_token=${data.payment_session_id}`;
-
     return NextResponse.json({
-      paymentUrl,
-      orderId: data.order_id,
       sessionId: data.payment_session_id,
+      orderId: data.order_id,
     });
 
   } catch (err) {
