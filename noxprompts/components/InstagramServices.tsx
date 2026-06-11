@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { FiInstagram, FiChevronDown, FiShoppingCart, FiAlertCircle, FiZap, FiInfo, FiLock } from 'react-icons/fi';
+import { FiInstagram, FiChevronDown, FiAlertCircle, FiZap, FiInfo, FiLock, FiLink, FiUser } from 'react-icons/fi';
 
 declare global {
   interface Window {
@@ -21,6 +21,49 @@ interface SMMService {
   max: string;
   category: string;
   description?: string;
+  refill?: boolean;
+  cancel?: boolean;
+}
+
+// Smart link detection based on service name/category
+function getLinkInfo(svc: SMMService | null): { placeholder: string; hint: string; icon: React.ReactNode } {
+  if (!svc) return { placeholder: 'https://instagram.com/...', hint: 'Enter the link', icon: <FiLink size={14}/> };
+  
+  const name = (svc.name + ' ' + svc.category).toLowerCase();
+  
+  if (name.includes('follower') || name.includes('username') || name.includes('profile') || name.includes('reach') || name.includes('indian mix')) {
+    return {
+      placeholder: 'https://instagram.com/yourusername',
+      hint: '👤 Enter your Instagram profile URL or username',
+      icon: <FiUser size={14} color="#8B2FC9"/>,
+    };
+  }
+  if (name.includes('reel') || name.includes('video') || name.includes('view') || name.includes('igtv')) {
+    return {
+      placeholder: 'https://instagram.com/reel/ABC123/',
+      hint: '🎬 Enter the Reel or Video URL',
+      icon: <FiLink size={14} color="#FF2D78"/>,
+    };
+  }
+  if (name.includes('story')) {
+    return {
+      placeholder: 'https://instagram.com/stories/username/',
+      hint: '📱 Enter the Story URL',
+      icon: <FiLink size={14} color="#FF2D78"/>,
+    };
+  }
+  if (name.includes('like') || name.includes('comment') || name.includes('save') || name.includes('post')) {
+    return {
+      placeholder: 'https://instagram.com/p/ABC123/',
+      hint: '📸 Enter the Post URL',
+      icon: <FiLink size={14} color="#FF2D78"/>,
+    };
+  }
+  return {
+    placeholder: 'https://instagram.com/...',
+    hint: '🔗 Enter the Instagram link',
+    icon: <FiLink size={14} color="var(--text-muted)"/>,
+  };
 }
 
 export default function InstagramServices() {
@@ -41,11 +84,11 @@ export default function InstagramServices() {
 
   const categories = Array.from(new Set(services.map(s => s.category))).filter(Boolean);
   const catServices = services.filter(s => s.category === selectedCategory);
+  const linkInfo = getLinkInfo(selectedService);
 
   const markedRate = (rate: string) => parseFloat(rate) * MARKUP;
   const priceFor = (rate: string, qty: number) => ((markedRate(rate) / 1000) * qty).toFixed(2);
 
-  // Load Cashfree SDK
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
@@ -75,12 +118,12 @@ export default function InstagramServices() {
   const selectCategory = (cat: string) => {
     setSelectedCategory(cat); setCatOpen(false);
     const first = services.find(s => s.category === cat);
-    if (first) { setSelectedService(first); setQuantity(parseInt(first.min) || 10); setQtyError(''); }
+    if (first) { setSelectedService(first); setQuantity(parseInt(first.min) || 10); setQtyError(''); setLink(''); }
   };
 
   const selectService = (svc: SMMService) => {
     setSelectedService(svc); setSvcOpen(false);
-    setQuantity(parseInt(svc.min) || 10); setQtyError(''); setPayStatus('idle');
+    setQuantity(parseInt(svc.min) || 10); setQtyError(''); setPayStatus('idle'); setLink('');
   };
 
   const handleQuantityChange = (val: string) => {
@@ -97,43 +140,19 @@ export default function InstagramServices() {
   const handlePayment = async () => {
     if (!selectedService || !link || qtyError) return;
     const price = priceFor(selectedService.rate, quantity);
-
-    setPayStatus('loading');
-    setPayError('');
-
+    setPayStatus('loading'); setPayError('');
     try {
-      // Create Cashfree order
       const res = await fetch('/api/cashfree', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'smm',
-          serviceId: selectedService.service,
-          serviceName: selectedService.name,
-          quantity,
-          link,
-          price,
-        }),
+        body: JSON.stringify({ type: 'smm', serviceId: selectedService.service, serviceName: selectedService.name, quantity, link, price }),
       });
-
       const data = await res.json();
-
-      if (!data.sessionId) {
-        setPayStatus('error');
-        setPayError(data.error || 'Payment initiation failed.');
-        return;
-      }
-
-      // Open Cashfree checkout
+      if (!data.sessionId) { setPayStatus('error'); setPayError(data.error || 'Payment initiation failed.'); return; }
       const cashfree = window.Cashfree({ mode: 'production' });
-      cashfree.checkout({
-        paymentSessionId: data.sessionId,
-        redirectTarget: '_self',
-      });
-
+      cashfree.checkout({ paymentSessionId: data.sessionId, redirectTarget: '_self' });
     } catch {
-      setPayStatus('error');
-      setPayError('Network error. Please try again.');
+      setPayStatus('error'); setPayError('Network error. Please try again.');
     }
   };
 
@@ -141,58 +160,30 @@ export default function InstagramServices() {
 
   const inputStyle = (hasError?: boolean): React.CSSProperties => ({
     width: '100%', background: 'var(--bg)',
-    border: `1px solid ${hasError ? '#FF2D78' : 'var(--border)'}`,
-    color: 'var(--text)', padding: '12px 16px', borderRadius: 12,
+    border: `1.5px solid ${hasError ? '#FF2D78' : 'var(--border)'}`,
+    color: 'var(--text)', padding: '13px 16px', borderRadius: 12,
     fontSize: 14, outline: 'none', fontFamily: 'inherit',
     boxSizing: 'border-box', transition: 'border-color 0.2s',
   });
 
   const labelStyle: React.CSSProperties = {
-    fontSize: 13, fontWeight: 700, color: 'var(--text)',
-    display: 'block', marginBottom: 8, letterSpacing: '0.02em',
+    fontSize: 12, fontWeight: 700, color: 'var(--text-muted)',
+    display: 'block', marginBottom: 8, letterSpacing: '0.04em', textTransform: 'uppercase',
   };
 
   const dropdownBtnStyle: React.CSSProperties = {
-    width: '100%', background: 'var(--bg)', border: '1px solid var(--border)',
-    color: 'var(--text)', padding: '12px 16px', borderRadius: 12,
+    width: '100%', background: 'var(--bg)', border: '1.5px solid var(--border)',
+    color: 'var(--text)', padding: '13px 16px', borderRadius: 12,
     fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
     display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-    textAlign: 'left' as const,
-  };
-
-  const dropdownMenuStyle: React.CSSProperties = {
-    position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
-    background: 'var(--bg-card)', border: '1px solid var(--border)',
-    borderRadius: 12, zIndex: 50, maxHeight: 280, overflowY: 'auto',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+    textAlign: 'left' as const, boxSizing: 'border-box' as const,
   };
 
   return (
-    <section id="instagram-services" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 16px 80px' }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-          background: 'linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <FiInstagram size={22} color="#fff" />
-        </div>
-        <div>
-          <h2 style={{ fontFamily: 'Unbounded,sans-serif', fontSize: 'clamp(16px,2.2vw,22px)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-            Instagram Services
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-            {loading ? 'Loading services...' : `${services.length} services · Powered by EasySMM`}
-          </p>
-        </div>
-      </div>
-
+    <section id="instagram-services">
       {error && (
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>⚠️</div>
-          <p>{error}</p>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>⚠️</div><p>{error}</p>
         </div>
       )}
 
@@ -205,34 +196,43 @@ export default function InstagramServices() {
       )}
 
       {!loading && !error && services.length > 0 && (
-        <div className="card" style={{ borderRadius: 20, padding: '28px 24px', maxWidth: 760 }}>
+        <div className="card" style={{ borderRadius: 20, padding: 'clamp(16px, 4vw, 28px)', width: '100%', boxSizing: 'border-box' }}>
 
           {/* Category */}
           <div style={{ marginBottom: 20 }}>
             <label style={labelStyle}>Category</label>
             <div style={{ position: 'relative' }}>
               <button style={dropdownBtnStyle} onClick={() => { setCatOpen(!catOpen); setSvcOpen(false); }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
                   <FiInstagram size={15} color="#dc2743" style={{ flexShrink: 0 }} />
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ 
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    display: 'block', minWidth: 0,
+                  }}>
                     {selectedCategory || 'Select category...'}
                   </span>
                 </span>
                 <FiChevronDown size={16} color="var(--text-muted)" style={{ flexShrink: 0, transform: catOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
               </button>
               {catOpen && (
-                <div style={dropdownMenuStyle}>
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                  background: 'var(--bg-card)', border: '1.5px solid var(--border)',
+                  borderRadius: 12, zIndex: 50, maxHeight: 280, overflowY: 'auto',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                }}>
                   {categories.map(cat => (
                     <button key={cat} onClick={() => selectCategory(cat)} style={{
                       width: '100%', background: cat === selectedCategory ? 'rgba(139,47,201,0.1)' : 'none',
                       border: 'none', color: cat === selectedCategory ? 'var(--purple)' : 'var(--text)',
                       padding: '11px 16px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
                       fontSize: 13, fontWeight: cat === selectedCategory ? 700 : 400,
-                      display: 'flex', alignItems: 'center', gap: 8,
-                      borderBottom: '1px solid var(--border)',
+                      display: 'flex', alignItems: 'flex-start', gap: 8,
+                      borderBottom: '1px solid var(--border)', boxSizing: 'border-box',
+                      whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.4,
                     }}>
-                      <FiInstagram size={13} color="#dc2743" />
-                      {cat}
+                      <FiInstagram size={13} color="#dc2743" style={{ marginTop: 2, flexShrink: 0 }} />
+                      <span>{cat}</span>
                     </button>
                   ))}
                 </div>
@@ -245,21 +245,26 @@ export default function InstagramServices() {
             <label style={labelStyle}>Service</label>
             <div style={{ position: 'relative' }}>
               <button style={dropdownBtnStyle} onClick={() => { setSvcOpen(!svcOpen); setCatOpen(false); }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
                   {selectedService && (
                     <span style={{
                       background: 'var(--purple)', color: '#fff',
                       fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, flexShrink: 0,
                     }}>{selectedService.service}</span>
                   )}
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0 }}>
                     {selectedService ? selectedService.name : 'Select service...'}
                   </span>
                 </span>
                 <FiChevronDown size={16} color="var(--text-muted)" style={{ flexShrink: 0, transform: svcOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
               </button>
               {svcOpen && (
-                <div style={dropdownMenuStyle}>
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                  background: 'var(--bg-card)', border: '1.5px solid var(--border)',
+                  borderRadius: 12, zIndex: 50, maxHeight: 320, overflowY: 'auto',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                }}>
                   {catServices.map(svc => {
                     const displayRate = markedRate(svc.rate).toFixed(2);
                     const isSelected = selectedService?.service === svc.service;
@@ -268,19 +273,19 @@ export default function InstagramServices() {
                         width: '100%', background: isSelected ? 'rgba(139,47,201,0.08)' : 'none',
                         border: 'none', color: isSelected ? 'var(--purple)' : 'var(--text)',
                         padding: '10px 16px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
-                        fontSize: 13, display: 'flex', alignItems: 'center', gap: 10,
-                        borderBottom: '1px solid var(--border)',
+                        fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 10,
+                        borderBottom: '1px solid var(--border)', boxSizing: 'border-box',
                       }}>
                         <span style={{
                           background: isSelected ? 'var(--purple)' : 'rgba(139,47,201,0.2)',
                           color: isSelected ? '#fff' : 'var(--purple)',
                           fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
-                          flexShrink: 0, minWidth: 32, textAlign: 'center',
+                          flexShrink: 0, minWidth: 32, textAlign: 'center', marginTop: 2,
                         }}>{svc.service}</span>
-                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ flex: 1, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.4 }}>
                           {svc.name}
                         </span>
-                        <span style={{ fontSize: 12, color: 'var(--pink)', flexShrink: 0, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 12, color: 'var(--pink)', flexShrink: 0, fontWeight: 700, whiteSpace: 'nowrap', marginTop: 2 }}>
                           ₹{displayRate}/1K
                         </span>
                       </button>
@@ -294,15 +299,12 @@ export default function InstagramServices() {
           {/* Description */}
           {selectedService?.description && (
             <div style={{ marginBottom: 20 }}>
-              <label style={labelStyle}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <FiInfo size={13} /> Description
-                </span>
-              </label>
+              <label style={labelStyle}><span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FiInfo size={12} /> Description</span></label>
               <div style={{
-                background: 'var(--bg)', border: '1px solid var(--border)',
+                background: 'var(--bg)', border: '1.5px solid var(--border)',
                 borderRadius: 12, padding: '14px 16px',
-                fontSize: 13, color: 'var(--text)', lineHeight: 1.7, whiteSpace: 'pre-wrap',
+                fontSize: 13, color: 'var(--text)', lineHeight: 1.7,
+                whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: 180, overflowY: 'auto',
               }}>
                 {selectedService.description}
               </div>
@@ -317,30 +319,35 @@ export default function InstagramServices() {
                 ['📉', 'Min', Number(selectedService.min).toLocaleString()],
                 ['📈', 'Max', Number(selectedService.max).toLocaleString()],
                 ['💰', 'Rate', `₹${markedRate(selectedService.rate).toFixed(2)}/1K`],
-              ].map(([icon, label, val]) => (
-                <div key={label} style={{
+                ...(selectedService.refill ? [['🔄', 'Refill', 'Available']] : []),
+              ].map(([icon, lbl, val]) => (
+                <div key={lbl} style={{
                   background: 'rgba(139,47,201,0.08)', border: '1px solid rgba(139,47,201,0.2)',
                   borderRadius: 8, padding: '6px 12px', fontSize: 12,
                 }}>
-                  <span style={{ color: 'var(--text-muted)' }}>{icon} {label}: </span>
-                  <span style={{ color: 'var(--text)', fontWeight: 700 }}>{val}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{icon} {lbl}: </span>
+                  <span style={{ color: lbl === 'Refill' ? '#00C864' : 'var(--text)', fontWeight: 700 }}>{val}</span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Link */}
+          {/* Smart Link Input */}
           <div style={{ marginBottom: 20 }}>
-            <label style={labelStyle}>Link</label>
+            <label style={labelStyle}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {linkInfo.icon} Link
+              </span>
+            </label>
             <input
               type="url"
-              placeholder="https://instagram.com/yourusername"
+              placeholder={linkInfo.placeholder}
               value={link}
               onChange={e => setLink(e.target.value)}
               style={inputStyle()}
             />
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
-              ↑ {selectedService?.type === 'Default' ? 'Enter your Instagram username or profile URL' : 'Enter the post / reel / story URL'}
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+              {linkInfo.hint}
             </p>
           </div>
 
@@ -349,7 +356,7 @@ export default function InstagramServices() {
             <div style={{ marginBottom: 24 }}>
               <label style={labelStyle}>
                 Quantity
-                <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 8 }}>
+                <span style={{ fontWeight: 400, marginLeft: 8, textTransform: 'none' }}>
                   (Min: {Number(selectedService.min).toLocaleString()} / Max: {Number(selectedService.max).toLocaleString()})
                 </span>
               </label>
@@ -362,12 +369,8 @@ export default function InstagramServices() {
                 style={inputStyle(!!qtyError)}
               />
               {qtyError && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  color: '#FF2D78', fontSize: 12, fontWeight: 600, marginTop: 8,
-                }}>
-                  <FiAlertCircle size={13} />
-                  {qtyError}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#FF2D78', fontSize: 12, fontWeight: 600, marginTop: 8 }}>
+                  <FiAlertCircle size={13} />{qtyError}
                 </div>
               )}
             </div>
@@ -388,9 +391,7 @@ export default function InstagramServices() {
                 </p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                  For {quantity.toLocaleString()} units
-                </p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>For {quantity.toLocaleString()} units</p>
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
                   <FiZap size={10} /> Instant delivery
                 </p>
@@ -398,16 +399,12 @@ export default function InstagramServices() {
             </div>
           )}
 
-          {/* Pay Error */}
           {payStatus === 'error' && (
-            <div style={{
-              background: 'rgba(255,45,120,0.08)', border: '1px solid rgba(255,45,120,0.3)',
-              borderRadius: 12, padding: '14px 16px', marginBottom: 16,
-              color: 'var(--pink)', fontSize: 14, fontWeight: 600,
-            }}>❌ {payError}</div>
+            <div style={{ background: 'rgba(255,45,120,0.08)', border: '1px solid rgba(255,45,120,0.3)', borderRadius: 12, padding: '14px 16px', marginBottom: 16, color: 'var(--pink)', fontSize: 14, fontWeight: 600 }}>
+              ❌ {payError}
+            </div>
           )}
 
-          {/* Pay Button */}
           <button
             className="btn-primary"
             onClick={handlePayment}
@@ -415,8 +412,7 @@ export default function InstagramServices() {
             style={{
               width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 10, fontSize: 16, padding: '14px 28px',
-              opacity: canOrder ? 1 : 0.45,
-              cursor: canOrder ? 'pointer' : 'not-allowed',
+              opacity: canOrder ? 1 : 0.45, cursor: canOrder ? 'pointer' : 'not-allowed',
             }}
           >
             {payStatus === 'loading'
