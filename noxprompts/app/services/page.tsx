@@ -1,9 +1,5 @@
+'use client';
 import InstagramServices from '@/components/InstagramServices';
-
-export const metadata = {
-  title: 'Instagram SMM Services | NoxPrompts',
-  description: 'Buy Instagram followers, likes, views and more at the best prices.',
-};
 
 export default function ServicesPage() {
   return (
