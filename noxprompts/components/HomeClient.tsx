@@ -122,7 +122,7 @@ export default function HomeClient({ allTrends, initSearch, initCategory, catego
       {/* Instagram SMM CTA Banner */}
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 48, marginTop: 8, paddingBottom: 48 }}>
         <div style={{
-          maxWidth: 700, margin: '0 auto', padding: '0 16px',
+          maxWidth: 700, margin: '0 auto',
           background: 'linear-gradient(135deg, rgba(255,45,120,0.08), rgba(139,47,201,0.08))',
           border: '1.5px solid rgba(139,47,201,0.25)',
           borderRadius: 24, padding: '36px 32px', textAlign: 'center',
