@@ -3,7 +3,6 @@ import { useState, useMemo } from 'react';
 import { Trend } from '@/lib/db';
 import TrendCard from './TrendCard';
 import SearchBar from './SearchBar';
-import InstagramServices from './InstagramServices';
 import { FiZap } from 'react-icons/fi';
 
 interface Props {
@@ -120,9 +119,47 @@ export default function HomeClient({ allTrends, initSearch, initCategory, catego
         </section>
       </div>
 
-      {/* Instagram SMM Services */}
-      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 48, marginTop: 8 }}>
-        <InstagramServices />
+      {/* Instagram SMM CTA Banner */}
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 48, marginTop: 8, paddingBottom: 48 }}>
+        <div style={{
+          maxWidth: 700, margin: '0 auto', padding: '0 16px',
+          background: 'linear-gradient(135deg, rgba(255,45,120,0.08), rgba(139,47,201,0.08))',
+          border: '1.5px solid rgba(139,47,201,0.25)',
+          borderRadius: 24, padding: '36px 32px', textAlign: 'center',
+        }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 16, margin: '0 auto 16px',
+            background: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26,
+          }}>📸</div>
+          <h2 style={{
+            fontFamily: 'Unbounded, sans-serif',
+            fontSize: 'clamp(18px, 3vw, 26px)',
+            fontWeight: 900, margin: '0 0 10px',
+            background: 'linear-gradient(135deg, #FF2D78, #8B2FC9)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>Instagram Services</h2>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 24px', lineHeight: 1.6 }}>
+            Followers, likes, views, comments & more — real growth at unbeatable prices. Instant delivery guaranteed.
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {['👥 Followers', '❤️ Likes', '🎬 Views', '💬 Comments'].map(tag => (
+              <span key={tag} style={{
+                background: 'rgba(139,47,201,0.12)', border: '1px solid rgba(139,47,201,0.2)',
+                borderRadius: 20, padding: '5px 14px', fontSize: 12, color: 'var(--text)',
+              }}>{tag}</span>
+            ))}
+          </div>
+          <a href="/services" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            marginTop: 24, padding: '13px 32px', borderRadius: 50,
+            background: 'linear-gradient(135deg, #FF2D78, #8B2FC9)',
+            color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none',
+            fontFamily: 'Unbounded, sans-serif',
+          }}>
+            🚀 View All Services
+          </a>
+        </div>
       </div>
     </div>
   );
