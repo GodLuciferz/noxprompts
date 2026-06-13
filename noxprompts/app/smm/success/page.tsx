@@ -1,25 +1,21 @@
 "use client";
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase-client";
 import Link from "next/link";
 
 function SMMSuccessContent() {
   const params = useSearchParams();
-  const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
   const [smmOrderId, setSmmOrderId] = useState("");
 
   useEffect(() => {
-    const cashfreeOrderId = params.get("order_id");
-    const serviceId = params.get("service");
-    const serviceName = params.get("service_name") || `Service #${serviceId}`;
-    const link = params.get("link");
-    const quantity = params.get("quantity");
-    const amount = params.get("amount") || "0";
-    const userId = params.get("user_id");
-    const userEmail = params.get("user_email");
+    const cashfreeOrderId = params.get("oid");
+    const serviceId = params.get("sid");
+    const link = params.get("lnk");
+    const quantity = params.get("qty");
+    const amount = params.get("amt") || "0";
 
     if (!cashfreeOrderId || !serviceId || !link || !quantity) {
       setStatus("error");
@@ -27,19 +23,12 @@ function SMMSuccessContent() {
       return;
     }
 
-    processOrder({ cashfreeOrderId, serviceId, serviceName, link, quantity, amount, userId, userEmail });
+    processOrder({ cashfreeOrderId, serviceId, link, quantity, amount });
   }, []);
 
-  const processOrder = async ({ cashfreeOrderId, serviceId, serviceName, link, quantity, amount, userId, userEmail }: any) => {
+  const processOrder = async ({ cashfreeOrderId, serviceId, link, quantity, amount }: any) => {
     try {
-      // Get user from session if not in URL
-      let finalUserId = userId;
-      let finalUserEmail = userEmail;
-      if (!finalUserId) {
-        const { data: { user } } = await supabaseBrowser.auth.getUser();
-        finalUserId = user?.id;
-        finalUserEmail = user?.email;
-      }
+      const { data: { user } } = await supabaseBrowser.auth.getUser();
 
       // Place SMM order
       const smmRes = await fetch("/api/smm/order", {
@@ -66,12 +55,12 @@ function SMMSuccessContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: finalUserId || "",
-          user_email: finalUserEmail ? decodeURIComponent(finalUserEmail) : "",
+          user_id: user?.id || "",
+          user_email: user?.email || "",
           cashfree_order_id: cashfreeOrderId,
           easysmm_order_id: String(smmData.order),
           service_id: serviceId,
-          service_name: decodeURIComponent(serviceName),
+          service_name: `Service #${serviceId}`,
           link: decodeURIComponent(link),
           quantity: parseInt(quantity),
           amount: parseFloat(amount),
@@ -84,7 +73,7 @@ function SMMSuccessContent() {
     } catch (err) {
       console.error(err);
       setStatus("error");
-      setMessage("Something went wrong. Please contact support with your payment ID.");
+      setMessage("Something went wrong. Please contact support.");
     }
   };
 
