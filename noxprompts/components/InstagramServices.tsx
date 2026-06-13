@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { FiInstagram, FiChevronDown, FiAlertCircle, FiZap, FiInfo, FiLock, FiLink, FiUser } from 'react-icons/fi';
+import { supabaseBrowser } from '@/lib/supabase-client';
 
 declare global {
   interface Window {
@@ -139,6 +140,16 @@ export default function InstagramServices() {
 
   const handlePayment = async () => {
     if (!selectedService || !link || qtyError) return;
+
+    // Check login first
+    const { data: { user } } = await supabaseBrowser.auth.getUser();
+    if (!user) {
+      await supabaseBrowser.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `https://www.noxzone111.online/services` },
+      });
+      return;
+    }
     const price = priceFor(selectedService.rate, quantity);
     setPayStatus('loading'); setPayError('');
     try {
