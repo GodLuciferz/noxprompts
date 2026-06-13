@@ -15,11 +15,12 @@ export async function POST(req: NextRequest) {
     let returnUrl: string;
 
     if (type === "smm") {
-      const { serviceId, serviceName, quantity, link, price, userId, userEmail } = body;
+      const { serviceId, serviceName, quantity, link, price } = body;
       orderId = `SMM${Date.now()}`;
       amount = parseFloat(price);
       orderNote = `SMM: ${serviceName} x${quantity}`;
-      returnUrl = `https://www.noxzone111.online/smm/success?order_id={order_id}&service=${serviceId}&service_name=${encodeURIComponent(serviceName)}&link=${encodeURIComponent(link)}&quantity=${quantity}&amount=${amount}&user_id=${userId || ""}&user_email=${encodeURIComponent(userEmail || "")}`;
+      // Short URL - only essential params
+      returnUrl = `https://www.noxzone111.online/smm/success?oid={order_id}&sid=${serviceId}&qty=${quantity}&lnk=${encodeURIComponent(link)}&amt=${amount}`;
     } else {
       const { promptSlug, promptName, price } = body;
       orderId = `NP${Date.now()}`;
@@ -40,7 +41,6 @@ export async function POST(req: NextRequest) {
       },
       order_meta: {
         return_url: returnUrl,
-        notify_url: `https://www.noxzone111.online/api/cashfree/webhook`,
       },
       order_note: orderNote,
     };
