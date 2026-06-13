@@ -15,17 +15,15 @@ export async function POST(req: NextRequest) {
     let returnUrl: string;
 
     if (type === "smm") {
-      // SMM Panel order
-      const { serviceId, serviceName, quantity, link, price } = body;
-      orderId = `SMM_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      const { serviceId, serviceName, quantity, link, price, userId, userEmail } = body;
+      orderId = `SMM${Date.now()}`;
       amount = parseFloat(price);
       orderNote = `SMM: ${serviceName} x${quantity}`;
-      returnUrl = `https://www.noxzone111.online/smm/success?order_id={order_id}&service=${serviceId}&link=${encodeURIComponent(link)}&quantity=${quantity}`;
+      returnUrl = `https://www.noxzone111.online/smm/success?order_id={order_id}&service=${serviceId}&service_name=${encodeURIComponent(serviceName)}&link=${encodeURIComponent(link)}&quantity=${quantity}&amount=${amount}&user_id=${userId || ""}&user_email=${encodeURIComponent(userEmail || "")}`;
     } else {
-      // Prompt unlock order (existing flow)
       const { promptSlug, promptName, price } = body;
-      orderId = `NP_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-      amount = price || 9;
+      orderId = `NP${Date.now()}`;
+      amount = parseFloat(price) || 9;
       orderNote = `Unlock: ${promptName}`;
       returnUrl = `https://www.noxzone111.online/checkout/success?order_id={order_id}&slug=${promptSlug}`;
     }
@@ -35,7 +33,7 @@ export async function POST(req: NextRequest) {
       order_amount: amount,
       order_currency: "INR",
       customer_details: {
-        customer_id: `cust_${Date.now()}`,
+        customer_id: `cust${Date.now()}`,
         customer_name: "NoxZone User",
         customer_email: "user@noxzone111.online",
         customer_phone: "9999999999",
@@ -65,6 +63,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ sessionId: data.payment_session_id, orderId });
+
   } catch (err) {
     console.error("Cashfree error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
