@@ -2,21 +2,45 @@
 import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { Trend, CATEGORIES } from '@/lib/db';
-import { FiPlus, FiTrash2, FiEdit2, FiLogOut, FiUpload, FiZap, FiInfo, FiLink, FiX, FiShoppingBag, FiDollarSign, FiRefreshCw } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiEdit2, FiLogOut, FiUpload, FiZap, FiInfo, FiLink, FiX, FiShoppingBag, FiUsers, FiTrendingUp, FiRefreshCw, FiClock, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 
 const PASS = '@noxstudio123';
+
+interface SMMOrder {
+  id: string;
+  cashfree_order_id: string;
+  easysmm_order_id: string;
+  service_name: string;
+  user_email: string;
+  link: string;
+  quantity: number;
+  amount: number;
+  status: string;
+  created_at: string;
+}
+
+interface AdminStats {
+  totalOrders: number;
+  todayOrders: number;
+  totalUsers: number;
+  totalRevenue: string;
+  todayRevenue: string;
+}
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState('');
   const [trends, setTrends] = useState<Trend[]>([]);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'list' | 'add' | 'info' | 'smm'>('list');
+  const [tab, setTab] = useState<'list' | 'add' | 'info' | 'orders'>('list');
   const [editTrend, setEditTrend] = useState<Trend | null>(null);
 
-  // SMM state
-  const [smmBalance, setSmmBalance] = useState('...');
-  const [smmLoading, setSmmLoading] = useState(false);
+  // Orders state
+  const [orders, setOrders] = useState<SMMOrder[]>([]);
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderFilter, setOrderFilter] = useState('all');
 
   // Trend form
   const [title, setTitle] = useState('');
@@ -38,8 +62,12 @@ export default function AdminPage() {
   const [links, setLinks] = useState<{label:string;url:string;icon:string}[]>([]);
 
   useEffect(() => {
-    if (authed) { fetchTrends(); fetchInfo(); fetchSmmBalance(); }
+    if (authed) { fetchTrends(); fetchInfo(); }
   }, [authed]);
+
+  useEffect(() => {
+    if (authed && tab === 'orders') fetchOrders();
+  }, [tab, authed]);
 
   async function fetchTrends() {
     setLoading(true);
@@ -49,24 +77,25 @@ export default function AdminPage() {
     setLoading(false);
   }
 
+  async function fetchOrders() {
+    setOrdersLoading(true);
+    try {
+      const res = await fetch('/api/admin/orders', {
+        headers: { 'x-admin-password': PASS },
+      });
+      const data = await res.json();
+      setOrders(data.orders || []);
+      setStats(data.stats || null);
+    } catch { toast.error('Failed to load orders'); }
+    setOrdersLoading(false);
+  }
+
   async function fetchInfo() {
     const res = await fetch('/api/info');
     const data = await res.json();
     setInfoTitle(data.title || '');
     setInfoDesc(data.description || '');
     setLinks(data.links || []);
-  }
-
-  async function fetchSmmBalance() {
-    setSmmLoading(true);
-    try {
-      const res = await fetch('/api/admin/smm-orders', {
-        headers: { 'x-admin-password': PASS },
-      });
-      const data = await res.json();
-      setSmmBalance(data.balance || '0');
-    } catch { setSmmBalance('Error'); }
-    setSmmLoading(false);
   }
 
   async function handleImageUpload(file: File) {
@@ -83,9 +112,7 @@ export default function AdminPage() {
       setImageUrl(data.url);
       setImagePreview(data.url);
       toast.success('Image uploaded! ✅');
-    } else {
-      toast.error('Upload failed');
-    }
+    } else { toast.error('Upload failed'); }
     setUploading(false);
   }
 
@@ -147,6 +174,34 @@ export default function AdminPage() {
     else toast.error('Failed');
   }
 
+  const statusColor = (s: string) => {
+    if (s === 'completed') return '#00C864';
+    if (s === 'canceled' || s === 'cancelled') return '#FF2D78';
+    if (s === 'in progress' || s === 'processing') return '#8B2FC9';
+    return 'var(--text-muted)';
+  };
+
+  const statusIcon = (s: string) => {
+    if (s === 'completed') return <FiCheckCircle size={12} />;
+    if (s === 'canceled' || s === 'cancelled') return <FiXCircle size={12} />;
+    if (s === 'in progress' || s === 'processing') return <FiRefreshCw size={12} />;
+    return <FiClock size={12} />;
+  };
+
+  const filteredOrders = orders.filter(o => {
+    const matchSearch = !orderSearch ||
+      o.user_email?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+      o.service_name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+      o.easysmm_order_id?.includes(orderSearch) ||
+      o.link?.toLowerCase().includes(orderSearch.toLowerCase());
+    const matchFilter = orderFilter === 'all' || o.status === orderFilter;
+    return matchSearch && matchFilter;
+  });
+
+  // Today's orders
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayOrdersList = filteredOrders.filter(o => new Date(o.created_at) >= today);
+
   if (!authed) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
@@ -169,14 +224,14 @@ export default function AdminPage() {
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 16px 80px' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 16px 80px' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontFamily: 'Unbounded,sans-serif', fontSize: 24, fontWeight: 900 }}>
             <span className="gradient-text">Admin Panel</span>
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>{trends.length} trends total</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>{trends.length} trends · {stats?.totalOrders || 0} orders</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button className="btn-primary" onClick={() => { resetForm(); setTab('add'); }} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -190,7 +245,12 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-        {([['list','📋 Trends'], ['add', editTrend ? '✏️ Edit' : '➕ Add'], ['info','ℹ️ Info & Links'], ['smm','📦 SMM']] as const).map(([t, label]) => (
+        {([
+          ['list','📋 Trends'],
+          ['add', editTrend ? '✏️ Edit' : '➕ Add'],
+          ['info','ℹ️ Info & Links'],
+          ['orders','📦 Orders'],
+        ] as const).map(([t, label]) => (
           <button key={t} onClick={() => { setTab(t); if (t === 'list') resetForm(); }}
             style={{
               padding: '8px 20px', borderRadius: 50, fontWeight: 700, cursor: 'pointer',
@@ -200,6 +260,11 @@ export default function AdminPage() {
               border: '1px solid var(--border)',
             }}>
             {label}
+            {t === 'orders' && stats?.todayOrders ? (
+              <span style={{ marginLeft: 6, background: '#FF2D78', color: '#fff', fontSize: 10, padding: '1px 6px', borderRadius: 10, fontWeight: 800 }}>
+                {stats.todayOrders} today
+              </span>
+            ) : null}
           </button>
         ))}
       </div>
@@ -296,16 +361,12 @@ export default function AdminPage() {
               <label style={labelStyle}>Description</label>
               <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe this art style..." rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
             </div>
-
-            {/* Trending Toggle */}
             <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div onClick={() => setIsTrending(!isTrending)} style={{ width: 48, height: 26, borderRadius: 13, background: isTrending ? 'linear-gradient(135deg,#FF6B00,#FFD000)' : 'var(--border)', position: 'relative', cursor: 'pointer', transition: 'background 0.3s' }}>
                 <div style={{ position: 'absolute', top: 3, left: isTrending ? 25 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.3s', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }} />
               </div>
               <span style={{ fontSize: 14, fontWeight: 600 }}>🔥 Mark as Trending</span>
             </div>
-
-            {/* 💎 Paid Toggle */}
             <div style={{ gridColumn: '1/-1', background: 'rgba(139,47,201,0.08)', border: '1.5px solid rgba(139,47,201,0.2)', borderRadius: 14, padding: '16px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
@@ -319,18 +380,11 @@ export default function AdminPage() {
               {isPaid && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
                   <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--purple)' }}>₹</span>
-                  <input
-                    type="number"
-                    min={1}
-                    value={price}
-                    onChange={e => setPrice(Number(e.target.value))}
-                    style={{ ...inputStyle, width: 100 }}
-                  />
+                  <input type="number" min={1} value={price} onChange={e => setPrice(Number(e.target.value))} style={{ ...inputStyle, width: 100 }} />
                   <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>per unlock</span>
                 </div>
               )}
             </div>
-
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
             <button className="btn-primary" onClick={handleSubmit}>{editTrend ? '✅ Update' : '🚀 Add Trend'}</button>
@@ -342,13 +396,7 @@ export default function AdminPage() {
       {/* INFO TAB */}
       {tab === 'info' && (
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 20, padding: '28px' }}>
-          <h2 style={{ fontFamily: 'Unbounded,sans-serif', fontSize: 17, fontWeight: 800, marginBottom: 24 }}>
-            ℹ️ Info & Links Section
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24, lineHeight: 1.6 }}>
-            Yeh info users ko ek floating button se dikhegi. Title, description aur links add karo.
-          </p>
-
+          <h2 style={{ fontFamily: 'Unbounded,sans-serif', fontSize: 17, fontWeight: 800, marginBottom: 24 }}>ℹ️ Info & Links Section</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div>
               <label style={labelStyle}>Title</label>
@@ -356,106 +404,148 @@ export default function AdminPage() {
             </div>
             <div>
               <label style={labelStyle}>Description</label>
-              <textarea value={infoDesc} onChange={e => setInfoDesc(e.target.value)} placeholder="Apne website ke baare mein likho..." rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+              <textarea value={infoDesc} onChange={e => setInfoDesc(e.target.value)} placeholder="Website ke baare mein..." rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
             </div>
-
-            {/* Links */}
             <div>
               <label style={labelStyle}>Links</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {links.map((link, i) => (
                   <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <input value={link.icon} onChange={e => { const l = [...links]; l[i].icon = e.target.value; setLinks(l); }}
-                      placeholder="Emoji" style={{ ...inputStyle, width: 60, flexShrink: 0 }} />
-                    <input value={link.label} onChange={e => { const l = [...links]; l[i].label = e.target.value; setLinks(l); }}
-                      placeholder="Label e.g. Instagram" style={{ ...inputStyle, flex: 1 }} />
-                    <input value={link.url} onChange={e => { const l = [...links]; l[i].url = e.target.value; setLinks(l); }}
-                      placeholder="https://..." style={{ ...inputStyle, flex: 2 }} />
+                    <input value={link.icon} onChange={e => { const l = [...links]; l[i].icon = e.target.value; setLinks(l); }} placeholder="Emoji" style={{ ...inputStyle, width: 60, flexShrink: 0 }} />
+                    <input value={link.label} onChange={e => { const l = [...links]; l[i].label = e.target.value; setLinks(l); }} placeholder="Label" style={{ ...inputStyle, flex: 1 }} />
+                    <input value={link.url} onChange={e => { const l = [...links]; l[i].url = e.target.value; setLinks(l); }} placeholder="https://..." style={{ ...inputStyle, flex: 2 }} />
                     <button onClick={() => setLinks(links.filter((_, j) => j !== i))} style={{ background: 'rgba(255,45,120,0.1)', border: 'none', color: '#FF2D78', width: 36, height: 36, borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <FiX size={15} />
                     </button>
                   </div>
                 ))}
-                <button onClick={() => setLinks([...links, { label: '', url: '', icon: '' }])}
-                  style={{ background: 'rgba(139,47,201,0.1)', border: '1.5px dashed rgba(139,47,201,0.3)', color: 'var(--purple)', padding: '10px', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <button onClick={() => setLinks([...links, { label: '', url: '', icon: '' }])} style={{ background: 'rgba(139,47,201,0.1)', border: '1.5px dashed rgba(139,47,201,0.3)', color: 'var(--purple)', padding: '10px', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   <FiPlus size={15} /> Add Link
                 </button>
               </div>
             </div>
-
-            <button className="btn-primary" onClick={saveInfo} style={{ alignSelf: 'flex-start' }}>
-              💾 Save Info
-            </button>
+            <button className="btn-primary" onClick={saveInfo} style={{ alignSelf: 'flex-start' }}>💾 Save Info</button>
           </div>
         </div>
       )}
-      {/* SMM TAB */}
-      {tab === 'smm' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 16 }}>
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px 24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700 }}>EASYSMM BALANCE</p>
-                <button onClick={fetchSmmBalance} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}>
-                  <FiRefreshCw size={13} />
-                </button>
-              </div>
-              <p style={{ fontSize: 28, fontWeight: 900, color: 'var(--purple)', fontFamily: 'Unbounded,sans-serif', margin: 0 }}>
-                ₹{smmLoading ? '...' : parseFloat(smmBalance || '0').toFixed(2)}
-              </p>
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Available in EasySMM wallet</p>
-            </div>
-            <div style={{ background: 'linear-gradient(135deg,rgba(255,45,120,0.08),rgba(139,47,201,0.08))', border: '1px solid rgba(255,45,120,0.2)', borderRadius: 16, padding: '20px 24px' }}>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 8 }}>YOUR MARKUP</p>
-              <p style={{ fontSize: 28, fontWeight: 900, color: 'var(--pink)', fontFamily: 'Unbounded,sans-serif', margin: 0 }}>30%</p>
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Profit on every order</p>
-            </div>
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px 24px' }}>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 12 }}>QUICK LINKS</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <a href="https://easysmmpanel.com/orders" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--purple)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <FiShoppingBag size={13} /> All Orders →
-                </a>
-                <a href="https://easysmmpanel.com/add-funds" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--pink)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <FiDollarSign size={13} /> Add Funds →
-                </a>
-              </div>
-            </div>
-          </div>
-          {/* Low balance alert */}
-          {!smmLoading && parseFloat(smmBalance || '0') < 50 && smmBalance !== '...' && (
-            <div style={{ background: 'rgba(255,45,120,0.08)', border: '1px solid rgba(255,45,120,0.3)', borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 24 }}>⚠️</span>
-              <div>
-                <p style={{ fontWeight: 700, color: 'var(--pink)', fontSize: 14, margin: 0 }}>EasySMM Balance Low!</p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                  Balance ₹{smmBalance} — orders fail ho sakte hain.
-                  <a href="https://easysmmpanel.com/add-funds" target="_blank" rel="noreferrer" style={{ color: 'var(--pink)', marginLeft: 6, fontWeight: 700 }}>Add funds →</a>
-                </p>
-              </div>
-            </div>
-          )}
-          {/* Earnings note */}
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
-            <h3 style={{ fontFamily: 'Unbounded,sans-serif', fontSize: 14, fontWeight: 800, margin: '0 0 16px' }}>💰 How Earnings Work</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12 }}>
+
+      {/* ORDERS TAB */}
+      {tab === 'orders' && (
+        <div>
+          {/* Stats Cards */}
+          {stats && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 24 }}>
               {[
-                ['EasySMM Rate', '₹X / 1000', 'var(--text-muted)'],
-                ['Your Price (30%)', '₹X × 1.30', 'var(--purple)'],
-                ['User Pays', 'Cashfree → You', 'var(--pink)'],
-                ['EasySMM Deducts', 'From Wallet', '#00C864'],
-              ].map(([label, val, color]) => (
-                <div key={label} style={{ background: 'var(--bg)', borderRadius: 12, padding: '14px 16px', border: '1px solid var(--border)' }}>
-                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 6px' }}>{label}</p>
-                  <p style={{ fontSize: 14, fontWeight: 700, color, margin: 0 }}>{val}</p>
+                { icon: <FiShoppingBag size={18} />, label: 'Total Orders', value: stats.totalOrders, color: '#8B2FC9' },
+                { icon: <FiTrendingUp size={18} />, label: "Today's Orders", value: stats.todayOrders, color: '#FF2D78' },
+                { icon: <FiUsers size={18} />, label: 'Unique Users', value: stats.totalUsers, color: '#00C8FF' },
+                { icon: <span style={{ fontSize: 16, fontWeight: 800 }}>₹</span>, label: 'Total Revenue', value: `₹${stats.totalRevenue}`, color: '#00C864' },
+                { icon: <span style={{ fontSize: 16, fontWeight: 800 }}>₹</span>, label: "Today's Revenue", value: `₹${stats.todayRevenue}`, color: '#FFD000' },
+              ].map(({ icon, label, value, color }) => (
+                <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '16px 18px' }}>
+                  <div style={{ color, marginBottom: 8 }}>{icon}</div>
+                  <p style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', margin: '0 0 4px', fontFamily: 'Unbounded,sans-serif' }}>{value}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>{label}</p>
                 </div>
               ))}
             </div>
+          )}
+
+          {/* Search + Filter + Refresh */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
+            <input
+              placeholder="Search by email, service, order ID..."
+              value={orderSearch}
+              onChange={e => setOrderSearch(e.target.value)}
+              style={{ ...inputStyle, flex: 1, minWidth: 200 }}
+            />
+            <select value={orderFilter} onChange={e => setOrderFilter(e.target.value)} style={{ ...inputStyle, width: 150 }}>
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="in progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <button onClick={fetchOrders} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 16px', borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit', fontSize: 13 }}>
+              <FiRefreshCw size={13} /> Refresh
+            </button>
           </div>
+
+          {/* Orders count */}
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
+            Showing {filteredOrders.length} orders
+            {todayOrdersList.length > 0 && ` · ${todayOrdersList.length} from today`}
+          </p>
+
+          {ordersLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[1,2,3].map(i => <div key={i} style={{ height: 90, borderRadius: 14, background: 'var(--bg-card)', border: '1px solid var(--border)', opacity: 0.5 }} />)}
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
+              <p>No orders found</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {filteredOrders.map(order => {
+                const isToday = new Date(order.created_at) >= today;
+                return (
+                  <div key={order.id} style={{
+                    background: 'var(--bg-card)',
+                    border: `1px solid ${isToday ? 'rgba(255,45,120,0.3)' : 'var(--border)'}`,
+                    borderRadius: 14, padding: '14px 18px',
+                    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {/* Top row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                        {isToday && (
+                          <span style={{ fontSize: 10, background: '#FF2D78', color: '#fff', padding: '2px 8px', borderRadius: 10, fontWeight: 800 }}>TODAY</span>
+                        )}
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--purple)' }}>
+                          #{order.easysmm_order_id}
+                        </span>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>·</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{order.user_email}</span>
+                      </div>
+                      {/* Service */}
+                      <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {order.service_name || 'Instagram Service'}
+                      </p>
+                      {/* Link */}
+                      <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        🔗 {order.link}
+                      </p>
+                      {/* Pills */}
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 11, background: 'rgba(139,47,201,0.1)', border: '1px solid rgba(139,47,201,0.2)', borderRadius: 6, padding: '2px 8px', color: 'var(--purple)', fontWeight: 700 }}>
+                          {order.quantity?.toLocaleString()} units
+                        </span>
+                        {order.amount > 0 && (
+                          <span style={{ fontSize: 11, background: 'rgba(0,200,100,0.1)', border: '1px solid rgba(0,200,100,0.2)', borderRadius: 6, padding: '2px 8px', color: '#00C864', fontWeight: 700 }}>
+                            ₹{order.amount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: statusColor(order.status) }}>
+                        {statusIcon(order.status)} {order.status}
+                      </div>
+                      <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+                        {new Date(order.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
-
     </div>
   );
 }
