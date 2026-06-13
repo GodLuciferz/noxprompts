@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-client';
 import type { User } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { FiRefreshCw, FiLogOut, FiShoppingBag, FiClock, FiCheckCircle, FiXCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiRefreshCw, FiLogOut, FiClock, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 
 interface SMMOrder {
   id: string;
@@ -27,18 +27,26 @@ export default function OrdersPage() {
   useEffect(() => {
     supabaseBrowser.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
-      if (user) fetchOrders(user.id);
+      if (user) fetchOrders(user);
       else setLoading(false);
     });
   }, []);
 
-  const fetchOrders = async (userId: string) => {
+  // Send BOTH user_id and user_email so backend can find orders either way
+  const fetchOrders = async (u: User) => {
     setLoading(true);
-    const res = await fetch('/api/smm/my-orders', {
-      headers: { 'x-user-id': userId },
-    });
-    const data = await res.json();
-    setOrders(Array.isArray(data) ? data : []);
+    try {
+      const res = await fetch('/api/smm/my-orders', {
+        headers: {
+          'x-user-id': u.id,
+          'x-user-email': u.email || '',
+        },
+      });
+      const data = await res.json();
+      setOrders(Array.isArray(data) ? data : []);
+    } catch {
+      setOrders([]);
+    }
     setLoading(false);
   };
 
@@ -64,11 +72,8 @@ export default function OrdersPage() {
         body: JSON.stringify({ orderId: parseInt(order.easysmm_order_id) }),
       });
       const data = await res.json();
-      if (data.refill) {
-        alert(`✅ Refill requested! Refill ID: ${data.refill}`);
-      } else {
-        alert('❌ Refill failed: ' + (data.error || 'Unknown error'));
-      }
+      if (data.refill) alert(`✅ Refill requested! ID: ${data.refill}`);
+      else alert('❌ Refill failed: ' + (data.error || 'Unknown error'));
     } catch { alert('Network error'); }
     setRefilling(null);
   };
@@ -133,7 +138,7 @@ export default function OrdersPage() {
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>{user?.email}</p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={() => user && fetchOrders(user.id)} style={{
+            <button onClick={() => user && fetchOrders(user)} style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '9px 16px', borderRadius: 50, border: '1px solid var(--border)',
               background: 'var(--bg-card)', color: 'var(--text)', cursor: 'pointer',
@@ -180,15 +185,12 @@ export default function OrdersPage() {
               <div key={order.id} className="card" style={{ borderRadius: 16, padding: '20px 24px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* Service name */}
                     <p style={{ fontSize: 14, fontWeight: 700, margin: '0 0 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {order.service_name || 'Instagram Service'}
                     </p>
-                    {/* Link */}
                     <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       🔗 {order.link}
                     </p>
-                    {/* Meta pills */}
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 11, background: 'rgba(139,47,201,0.1)', border: '1px solid rgba(139,47,201,0.2)', borderRadius: 6, padding: '3px 10px', color: 'var(--purple)', fontWeight: 700 }}>
                         {order.quantity?.toLocaleString()} units
@@ -202,18 +204,14 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  {/* Right side */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
-                    {/* Status */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: statusColor(order.status) }}>
                       {statusIcon(order.status)}
                       {order.status}
                     </div>
-                    {/* Date */}
                     <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
                       {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
-                    {/* Refill button */}
                     {order.refill_eligible && (
                       <button
                         onClick={() => handleRefill(order)}
