@@ -156,7 +156,7 @@ export default function InstagramServices() {
       const res = await fetch('/api/cashfree', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'smm', serviceId: selectedService.service, serviceName: selectedService.name, quantity, link, price }),
+        body: JSON.stringify({ type: 'smm', serviceId: selectedService.service, serviceName: selectedService.name, quantity, link, price, userId: user.id, userEmail: user.email }),
       });
       const data = await res.json();
       if (!data.sessionId) { setPayStatus('error'); setPayError(data.error || 'Payment initiation failed.'); return; }
