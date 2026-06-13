@@ -22,6 +22,7 @@ export default function OrdersPage() {
   const [user, setUser] = useState<User | null>(null);
   const [orders, setOrders] = useState<SMMOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [refilling, setRefilling] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,7 +33,6 @@ export default function OrdersPage() {
     });
   }, []);
 
-  // Send BOTH user_id and user_email so backend can find orders either way
   const fetchOrders = async (u: User) => {
     setLoading(true);
     try {
@@ -43,11 +43,45 @@ export default function OrdersPage() {
         },
       });
       const data = await res.json();
-      setOrders(Array.isArray(data) ? data : []);
+      const ordersData = Array.isArray(data) ? data : [];
+      setOrders(ordersData);
+
+      // Auto-sync status from EasySMM for pending/in-progress orders
+      const toSync = ordersData
+        .filter((o: SMMOrder) => o.easysmm_order_id && o.status !== 'completed' && o.status !== 'cancelled')
+        .map((o: SMMOrder) => o.easysmm_order_id);
+
+      if (toSync.length > 0) {
+        syncStatuses(toSync, ordersData);
+      }
     } catch {
       setOrders([]);
     }
     setLoading(false);
+  };
+
+  const syncStatuses = async (orderIds: string[], currentOrders: SMMOrder[]) => {
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/smm/sync-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderIds }),
+      });
+      const result = await res.json();
+
+      if (result.statusData) {
+        // Update orders locally with new statuses
+        setOrders(currentOrders.map(order => {
+          const updated = result.statusData[order.easysmm_order_id];
+          if (updated?.status) {
+            return { ...order, status: updated.status.toLowerCase() };
+          }
+          return order;
+        }));
+      }
+    } catch {}
+    setSyncing(false);
   };
 
   const handleGoogleLogin = async () => {
@@ -92,7 +126,6 @@ export default function OrdersPage() {
     return 'var(--text-muted)';
   };
 
-  // Not logged in
   if (!user && !loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: 20 }}>
       <div style={{
@@ -135,7 +168,10 @@ export default function OrdersPage() {
             <h1 style={{ fontFamily: 'Unbounded,sans-serif', fontSize: 'clamp(18px,3vw,26px)', fontWeight: 900, margin: '0 0 4px' }}>
               📦 My Orders
             </h1>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>{user?.email}</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+              {user?.email}
+              {syncing && <span style={{ marginLeft: 10, color: 'var(--purple)', fontSize: 11 }}>⟳ Syncing status...</span>}
+            </p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => user && fetchOrders(user)} style={{
@@ -186,7 +222,7 @@ export default function OrdersPage() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 14, fontWeight: 700, margin: '0 0 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {order.service_name || 'Instagram Service'}
+                      {order.service_name || `Service #${order.easysmm_order_id}`}
                     </p>
                     <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       🔗 {order.link}
@@ -195,9 +231,11 @@ export default function OrdersPage() {
                       <span style={{ fontSize: 11, background: 'rgba(139,47,201,0.1)', border: '1px solid rgba(139,47,201,0.2)', borderRadius: 6, padding: '3px 10px', color: 'var(--purple)', fontWeight: 700 }}>
                         {order.quantity?.toLocaleString()} units
                       </span>
-                      <span style={{ fontSize: 11, background: 'rgba(255,45,120,0.1)', border: '1px solid rgba(255,45,120,0.2)', borderRadius: 6, padding: '3px 10px', color: 'var(--pink)', fontWeight: 700 }}>
-                        ₹{order.amount}
-                      </span>
+                      {order.amount > 0 && (
+                        <span style={{ fontSize: 11, background: 'rgba(255,45,120,0.1)', border: '1px solid rgba(255,45,120,0.2)', borderRadius: 6, padding: '3px 10px', color: 'var(--pink)', fontWeight: 700 }}>
+                          ₹{order.amount}
+                        </span>
+                      )}
                       <span style={{ fontSize: 11, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px', color: 'var(--text-muted)' }}>
                         ID: #{order.easysmm_order_id}
                       </span>
