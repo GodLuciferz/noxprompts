@@ -67,6 +67,94 @@ export default function HomeClient({ allTrends, initSearch, initCategory, catego
         <SearchBar allTitles={allTitles} allTags={allTags} initValue={q} onChange={setQ} />
       </div>
 
+      {/* === TWO CARDS — Instagram + NoxLoad === */}
+      <div style={{
+        maxWidth: 1280, margin: '0 auto', padding: '0 16px 40px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+        gap: 20,
+      }}>
+        {/* Instagram Services Card */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(255,45,120,0.08), rgba(139,47,201,0.08))',
+          border: '1.5px solid rgba(139,47,201,0.25)',
+          borderRadius: 24, padding: '36px 32px', textAlign: 'center',
+        }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 16, margin: '0 auto 16px',
+            background: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26,
+          }}>📸</div>
+          <h2 style={{
+            fontFamily: 'Unbounded, sans-serif',
+            fontSize: 'clamp(18px, 3vw, 22px)',
+            fontWeight: 900, margin: '0 0 10px',
+            background: 'linear-gradient(135deg, #FF2D78, #8B2FC9)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>Instagram Services</h2>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 24px', lineHeight: 1.6 }}>
+            Followers, likes, views, comments & more — real growth at unbeatable prices. Instant delivery guaranteed.
+          </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
+            {['👥 Followers', '❤️ Likes', '🎬 Views', '💬 Comments'].map(tag => (
+              <span key={tag} style={{
+                background: 'rgba(139,47,201,0.12)', border: '1px solid rgba(139,47,201,0.2)',
+                borderRadius: 20, padding: '5px 14px', fontSize: 12, color: 'var(--text)',
+              }}>{tag}</span>
+            ))}
+          </div>
+          <a href="/services" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '13px 32px', borderRadius: 50,
+            background: 'linear-gradient(135deg, #FF2D78, #8B2FC9)',
+            color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none',
+            fontFamily: 'Unbounded, sans-serif',
+          }}>
+            🚀 View All Services
+          </a>
+        </div>
+
+        {/* NoxLoad Card */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(0,255,128,0.06), rgba(0,200,100,0.06))',
+          border: '1.5px solid rgba(0,255,128,0.2)',
+          borderRadius: 24, padding: '36px 32px', textAlign: 'center',
+        }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 16, margin: '0 auto 16px',
+            background: 'linear-gradient(135deg, #00ff80, #00c864)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26,
+          }}>⚡</div>
+          <h2 style={{
+            fontFamily: 'Unbounded, sans-serif',
+            fontSize: 'clamp(18px, 3vw, 22px)',
+            fontWeight: 900, margin: '0 0 10px',
+            background: 'linear-gradient(135deg, #00ff80, #00c864)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>NoxLoad</h2>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 24px', lineHeight: 1.6 }}>
+            YouTube, Instagram, Twitter & 1000+ sites se videos download karo — free, fast & no signup needed.
+          </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
+            {['▶️ YouTube', '📸 Instagram', '🐦 Twitter/X', '🎵 TikTok'].map(tag => (
+              <span key={tag} style={{
+                background: 'rgba(0,255,128,0.08)', border: '1px solid rgba(0,255,128,0.2)',
+                borderRadius: 20, padding: '5px 14px', fontSize: 12, color: 'var(--text)',
+              }}>{tag}</span>
+            ))}
+          </div>
+          <a href="https://noxload.onrender.com" target="_blank" rel="noopener noreferrer" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '13px 32px', borderRadius: 50,
+            background: 'linear-gradient(135deg, #00ff80, #00c864)',
+            color: '#000', fontWeight: 700, fontSize: 15, textDecoration: 'none',
+            fontFamily: 'Unbounded, sans-serif',
+          }}>
+            ⚡ Open NoxLoad
+          </a>
+        </div>
+      </div>
+
       {/* Category filters */}
       <div style={{
         display: 'flex', gap: 8, overflowX: 'auto', padding: '0 16px 16px',
@@ -117,49 +205,6 @@ export default function HomeClient({ allTrends, initSearch, initCategory, catego
             </div>
           )}
         </section>
-      </div>
-
-      {/* Instagram SMM CTA Banner */}
-      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 48, marginTop: 8, paddingBottom: 48 }}>
-        <div style={{
-          maxWidth: 700, margin: '0 auto',
-          background: 'linear-gradient(135deg, rgba(255,45,120,0.08), rgba(139,47,201,0.08))',
-          border: '1.5px solid rgba(139,47,201,0.25)',
-          borderRadius: 24, padding: '36px 32px', textAlign: 'center',
-        }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: 16, margin: '0 auto 16px',
-            background: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26,
-          }}>📸</div>
-          <h2 style={{
-            fontFamily: 'Unbounded, sans-serif',
-            fontSize: 'clamp(18px, 3vw, 26px)',
-            fontWeight: 900, margin: '0 0 10px',
-            background: 'linear-gradient(135deg, #FF2D78, #8B2FC9)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>Instagram Services</h2>
-          <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 24px', lineHeight: 1.6 }}>
-            Followers, likes, views, comments & more — real growth at unbeatable prices. Instant delivery guaranteed.
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {['👥 Followers', '❤️ Likes', '🎬 Views', '💬 Comments'].map(tag => (
-              <span key={tag} style={{
-                background: 'rgba(139,47,201,0.12)', border: '1px solid rgba(139,47,201,0.2)',
-                borderRadius: 20, padding: '5px 14px', fontSize: 12, color: 'var(--text)',
-              }}>{tag}</span>
-            ))}
-          </div>
-          <a href="/services" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            marginTop: 24, padding: '13px 32px', borderRadius: 50,
-            background: 'linear-gradient(135deg, #FF2D78, #8B2FC9)',
-            color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none',
-            fontFamily: 'Unbounded, sans-serif',
-          }}>
-            🚀 View All Services
-          </a>
-        </div>
       </div>
     </div>
   );
