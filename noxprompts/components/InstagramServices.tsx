@@ -190,14 +190,20 @@ export default function InstagramServices() {
         config: {
           display: {
             blocks: {
+              qr: {
+                name: 'Scan & Pay',
+                instruments: [
+                  { method: 'upi', flows: ['qr'] },
+                ],
+              },
               upi: {
                 name: 'Pay via UPI',
                 instruments: [
-                  { method: 'upi' },
+                  { method: 'upi', flows: ['collect', 'intent'] },
                 ],
               },
             },
-            sequence: ['block.upi'],
+            sequence: ['block.qr', 'block.upi'],
             preferences: {
               show_default_blocks: false,
             },
