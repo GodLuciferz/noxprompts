@@ -175,7 +175,7 @@ export default function InstagramServices() {
         return;
       }
 
-      // 2. Open Razorpay checkout modal
+      // 2. Open Razorpay checkout modal — UPI only (QR + UPI apps)
       const options = {
         key: data.keyId,
         amount: data.amount,
@@ -187,6 +187,22 @@ export default function InstagramServices() {
           email: user.email || '',
         },
         theme: { color: '#8B2FC9' },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: 'Pay via UPI',
+                instruments: [
+                  { method: 'upi' },
+                ],
+              },
+            },
+            sequence: ['block.upi'],
+            preferences: {
+              show_default_blocks: false,
+            },
+          },
+        },
         handler: async function (response: any) {
           // 3. Verify payment signature
           try {
@@ -496,7 +512,7 @@ export default function InstagramServices() {
           </button>
 
           <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 10 }}>
-            🔒 Secure payment via Razorpay · UPI, Cards, Net Banking accepted
+            🔒 Secure payment via Razorpay · UPI accepted
           </p>
         </div>
       )}
