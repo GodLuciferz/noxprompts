@@ -175,7 +175,7 @@ export default function InstagramServices() {
         return;
       }
 
-      // 2. Open Razorpay checkout modal — UPI only (QR + UPI apps)
+      // 2. Open Razorpay checkout modal — only UPI (QR shows automatically, cards/netbanking/wallet hidden)
       const options = {
         key: data.keyId,
         amount: data.amount,
@@ -189,24 +189,13 @@ export default function InstagramServices() {
         theme: { color: '#8B2FC9' },
         config: {
           display: {
-            blocks: {
-              qr: {
-                name: 'Scan & Pay',
-                instruments: [
-                  { method: 'upi', flows: ['qr'] },
-                ],
-              },
-              upi: {
-                name: 'Pay via UPI',
-                instruments: [
-                  { method: 'upi', flows: ['collect', 'intent'] },
-                ],
-              },
-            },
-            sequence: ['block.qr', 'block.upi'],
-            preferences: {
-              show_default_blocks: false,
-            },
+            hide: [
+              { method: 'card' },
+              { method: 'netbanking' },
+              { method: 'wallet' },
+              { method: 'paylater' },
+              { method: 'emi' },
+            ],
           },
         },
         handler: async function (response: any) {
