@@ -5,9 +5,7 @@ import { supabaseBrowser } from '@/lib/supabase-client';
 
 declare global {
   interface Window {
-    Cashfree: (config: { mode: string }) => {
-      checkout: (options: { paymentSessionId: string; redirectTarget: string }) => void;
-    };
+    Razorpay: any;
   }
 }
 
@@ -92,7 +90,7 @@ export default function InstagramServices() {
 
   useEffect(() => {
     const script = document.createElement('script');
-    script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
     document.body.appendChild(script);
     return () => { document.body.removeChild(script); };
@@ -152,16 +150,81 @@ export default function InstagramServices() {
     }
     const price = priceFor(selectedService.rate, quantity);
     setPayStatus('loading'); setPayError('');
+
     try {
-      const res = await fetch('/api/cashfree', {
+      // 1. Create Razorpay order via backend
+      const res = await fetch('/api/razorpay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'smm', serviceId: selectedService.service, serviceName: selectedService.name, quantity, link, price, userId: user.id, userEmail: user.email }),
+        body: JSON.stringify({
+          type: 'smm',
+          serviceId: selectedService.service,
+          serviceName: selectedService.name,
+          quantity,
+          link,
+          price,
+          userId: user.id,
+          userEmail: user.email,
+        }),
       });
       const data = await res.json();
-      if (!data.sessionId) { setPayStatus('error'); setPayError(data.error || 'Payment initiation failed.'); return; }
-      const cashfree = window.Cashfree({ mode: 'production' });
-      cashfree.checkout({ paymentSessionId: data.sessionId, redirectTarget: '_self' });
+
+      if (!data.orderId) {
+        setPayStatus('error');
+        setPayError(data.error || 'Payment initiation failed.');
+        return;
+      }
+
+      // 2. Open Razorpay checkout modal
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'NoxPrompts',
+        description: `SMM: ${selectedService.name} x${quantity}`,
+        order_id: data.orderId,
+        prefill: {
+          email: user.email || '',
+        },
+        theme: { color: '#8B2FC9' },
+        handler: async function (response: any) {
+          // 3. Verify payment signature
+          try {
+            const verifyRes = await fetch('/api/razorpay/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+
+            if (!verifyData.paid) {
+              setPayStatus('error');
+              setPayError('Payment verification failed. Please contact support.');
+              return;
+            }
+
+            // 4. Redirect to success page (same params smm-success page expects)
+            const successUrl = `https://www.noxzone111.online/smm/success?oid=${response.razorpay_payment_id}&sid=${selectedService.service}&qty=${quantity}&lnk=${encodeURIComponent(link)}&amt=${price}`;
+            window.location.href = successUrl;
+          } catch {
+            setPayStatus('error');
+            setPayError('Verification failed. Please contact support.');
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setPayStatus('idle');
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+      setPayStatus('idle');
     } catch {
       setPayStatus('error'); setPayError('Network error. Please try again.');
     }
@@ -433,7 +496,7 @@ export default function InstagramServices() {
           </button>
 
           <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 10 }}>
-            🔒 Secure payment via Cashfree · UPI, Cards, Net Banking accepted
+            🔒 Secure payment via Razorpay · UPI, Cards, Net Banking accepted
           </p>
         </div>
       )}
